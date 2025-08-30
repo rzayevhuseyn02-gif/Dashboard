@@ -39,7 +39,7 @@ python app_simple.py
 
 ### 6️⃣ Brauzerda Açın
 Brauzerinizdə bu ünvana keçin: `http://localhost:5001`
-
+duzgun kod
 ## 🎉 Hazır! 
 
 İndi dashboard işləyir və bu səhifələrə daxil ola bilərsiniz:
