@@ -179,6 +179,7 @@ def detailed_statistics():
         # Calculate percentiles
         p25 = sorted_values[int(0.25 * n)]
         p75 = sorted_values[int(0.75 * n)]
+        p90 = sorted_values[int(0.90 * n)]
         
         return {
             'count': n,
@@ -191,6 +192,7 @@ def detailed_statistics():
             'range': max_val - min_val,
             'p25': p25,
             'p75': p75,
+            'p90': p90,
             'iqr': p75 - p25
         }
     
