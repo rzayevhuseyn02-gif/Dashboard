@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Economic Stress Testing - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                US Economic Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="/analysis">
+                    <i class="fas fa-chart-bar me-1"></i>Analysis
+                </a>
+                <a class="nav-link" href="/forecasting">
+                    <i class="fas fa-crystal-ball me-1"></i>Forecasting
+                </a>
+                <a class="nav-link" href="/statistics">
+                    <i class="fas fa-calculator me-1"></i>Statistics
+                </a>
+                <a class="nav-link active" href="/stress_testing">
+                    <i class="fas fa-shield-alt me-1"></i>Stress Testing
+                </a>
+                <span class="navbar-text me-3">
+                    <i class="fas fa-calendar me-1"></i>
+                    <span id="current-date"></span>
+                </span>
+                <button class="btn btn-outline-light btn-sm" onclick="exportData()">
+                    <i class="fas fa-download me-1"></i>Export Data
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Economic Stress Testing
+                        </h4>
+                        <p class="mb-0 mt-2 opacity-75">Test your economic models against various stress scenarios and market conditions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predefined Stress Scenarios -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-fire me-2"></i>
+                            Predefined Stress Scenarios
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-fire fa-2x text-danger mb-3"></i>
+                                        <h6 class="card-title">Recession Scenario</h6>
+                                        <p class="card-text small">Simulate a severe economic downturn with GDP decline, rising unemployment, and falling consumption.</p>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('recession')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-line-down fa-2x text-warning mb-3"></i>
+                                        <h6 class="card-title">Market Crash</h6>
+                                        <p class="card-text small">Test against sudden market volatility and rapid economic contraction scenarios.</p>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('market_crash')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-dollar-sign fa-2x text-info mb-3"></i>
+                                        <h6 class="card-title">Inflation Shock</h6>
+                                        <p class="card-text small">Simulate high inflation periods with rapid price increases and monetary policy changes.</p>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('inflation_shock')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-globe fa-2x text-success mb-3"></i>
+                                        <h6 class="card-title">Global Crisis</h6>
+                                        <p class="card-text small">Test against international economic shocks and global financial instability.</p>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('global_crisis')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Stress Scenario -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Custom Stress Scenario
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="gdp-shock" class="form-label">GDP Shock (%)</label>
+                                <input type="number" class="form-control" id="gdp-shock" value="-5" step="0.1" min="-50" max="50">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="unemployment-shock" class="form-label">Unemployment Shock (%)</label>
+                                <input type="number" class="form-control" id="unemployment-shock" value="2" step="0.1" min="-10" max="20">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="pce-shock" class="form-label">Consumption Shock (%)</label>
+                                <input type="number" class="form-control" id="pce-shock" value="-3" step="0.1" min="-30" max="30">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="duration" class="form-label">Duration (months)</label>
+                                <select class="form-select" id="duration">
+                                    <option value="3">3 months</option>
+                                    <option value="6" selected>6 months</option>
+                                    <option value="12">12 months</option>
+                                    <option value="24">24 months</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-success btn-lg" onclick="runCustomStressTest()">
+                                <i class="fas fa-play me-2"></i>Run Custom Stress Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stress Test Results -->
+        <div class="row mb-4" id="stress-results" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Stress Test Results
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Results Grid -->
+                        <div class="row mb-4" id="results-grid">
+                            <!-- Results will be populated here -->
+                        </div>
+                        
+                        <!-- Charts -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">GDP Impact</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="gdp-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Unemployment Impact</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="unemployment-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Consumption Impact</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="consumption-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Risk Metrics</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="risk-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="row" id="loading" style="display: none;">
+            <div class="col-12 text-center">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-0">Running stress test analysis...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentResults = null;
+        
+        // Run predefined stress test
+        function runStressTest(scenario) {
+            showLoading();
+            
+            // Define scenario parameters
+            const scenarios = {
+                'recession': { gdp: -8, unemployment: 4, pce: -6, duration: 12 },
+                'market_crash': { gdp: -12, unemployment: 6, pce: -8, duration: 6 },
+                'inflation_shock': { gdp: -3, unemployment: 1, pce: -2, duration: 6 },
+                'global_crisis': { gdp: -15, unemployment: 8, pce: -10, duration: 18 }
+            };
+            
+            const params = scenarios[scenario];
+            runCustomStressTest(params);
+        }
+        
+        // Run custom stress test
+        function runCustomStressTest(customParams = null) {
+            showLoading();
+            
+            let params;
+            if (customParams) {
+                params = customParams;
+            } else {
+                params = {
+                    gdp: parseFloat(document.getElementById('gdp-shock').value),
+                    unemployment: parseFloat(document.getElementById('unemployment-shock').value),
+                    pce: parseFloat(document.getElementById('pce-shock').value),
+                    duration: parseInt(document.getElementById('duration').value)
+                };
+            }
+            
+            // Call API
+            fetch(`/api/stress-testing/run`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayResults(data.results);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('Error running stress test');
+            });
+        }
+        
+        // Display stress test results
+        function displayResults(results) {
+            currentResults = results;
+            
+            // Show results section
+            document.getElementById('stress-results').style.display = 'block';
+            
+            // Populate results grid
+            const resultsGrid = document.getElementById('results-grid');
+            resultsGrid.innerHTML = `
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title">GDP Impact</h6>
+                            <h3 class="text-primary">${results.gdp_impact.toFixed(2)}%</h3>
+                            <small class="text-muted ${results.gdp_impact < 0 ? 'text-danger' : 'text-success'}">
+                                ${results.gdp_impact < 0 ? '↓' : '↑'} ${Math.abs(results.gdp_impact).toFixed(2)}%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title">Unemployment Impact</h6>
+                            <h3 class="text-warning">${results.unemployment_impact.toFixed(2)}%</h3>
+                            <small class="text-muted ${results.unemployment_impact > 0 ? 'text-danger' : 'text-success'}">
+                                ${results.unemployment_impact > 0 ? '↑' : '↓'} ${Math.abs(results.unemployment_impact).toFixed(2)}%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title">Consumption Impact</h6>
+                            <h3 class="text-info">${results.consumption_impact.toFixed(2)}%</h3>
+                            <small class="text-muted ${results.consumption_impact < 0 ? 'text-danger' : 'text-success'}">
+                                ${results.consumption_impact < 0 ? '↓' : '↑'} ${Math.abs(results.consumption_impact).toFixed(2)}%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title">Risk Score</h6>
+                            <h3 class="text-secondary">${results.risk_score.toFixed(1)}</h3>
+                            <small class="text-muted">${getRiskLevel(results.risk_score)}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Create charts
+            createCharts(results);
+        }
+        
+        // Create visualization charts
+        function createCharts(results) {
+            // GDP Impact Chart
+            const gdpData = [{
+                x: results.time_periods,
+                y: results.gdp_trajectory,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'GDP Trajectory',
+                line: { color: '#1f77b4', width: 3 },
+                marker: { size: 6 }
+            }];
+            
+            const gdpLayout = {
+                title: 'GDP Impact Over Time',
+                xaxis: { title: 'Time Period (months)' },
+                yaxis: { title: 'GDP Change (%)' },
+                template: 'plotly_white',
+                height: 300
+            };
+            
+            Plotly.newPlot('gdp-chart', gdpData, gdpLayout);
+            
+            // Unemployment Impact Chart
+            const unemploymentData = [{
+                x: results.time_periods,
+                y: results.unemployment_trajectory,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Unemployment Trajectory',
+                line: { color: '#d62728', width: 3 },
+                marker: { size: 6 }
+            }];
+            
+            const unemploymentLayout = {
+                title: 'Unemployment Impact Over Time',
+                xaxis: { title: 'Time Period (months)' },
+                yaxis: { title: 'Unemployment Change (%)' },
+                template: 'plotly_white',
+                height: 300
+            };
+            
+            Plotly.newPlot('unemployment-chart', unemploymentData, unemploymentLayout);
+            
+            // Consumption Impact Chart
+            const consumptionData = [{
+                x: results.time_periods,
+                y: results.consumption_trajectory,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Consumption Trajectory',
+                line: { color: '#2ca02c', width: 3 },
+                marker: { size: 6 }
+            }];
+            
+            const consumptionLayout = {
+                title: 'Consumption Impact Over Time',
+                xaxis: { title: 'Time Period (months)' },
+                yaxis: { title: 'Consumption Change (%)' },
+                template: 'plotly_white',
+                height: 300
+            };
+            
+            Plotly.newPlot('consumption-chart', consumptionData, consumptionLayout);
+            
+            // Risk Metrics Chart
+            const riskData = [{
+                x: ['GDP Risk', 'Unemployment Risk', 'Consumption Risk', 'Overall Risk'],
+                y: [results.gdp_risk, results.unemployment_risk, results.consumption_risk, results.risk_score],
+                type: 'bar',
+                marker: {
+                    color: ['#ff7f0e', '#d62728', '#2ca02c', '#667eea']
+                }
+            }];
+            
+            const riskLayout = {
+                title: 'Risk Assessment by Category',
+                xaxis: { title: 'Risk Categories' },
+                yaxis: { title: 'Risk Score' },
+                template: 'plotly_white',
+                height: 300
+            };
+            
+            Plotly.newPlot('risk-chart', riskData, riskLayout);
+        }
+        
+        // Get risk level description
+        function getRiskLevel(score) {
+            if (score < 3) return 'Low Risk';
+            if (score < 6) return 'Medium Risk';
+            if (score < 8) return 'High Risk';
+            return 'Critical Risk';
+        }
+        
+        // Show/hide loading state
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('stress-results').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Stress Testing page loaded');
+            
+            // Set current date
+            const currentDate = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const dateElement = document.querySelector('#current-date');
+            if (dateElement) {
+                dateElement.textContent = currentDate;
+            }
+        });
+        
+        // Export data function
+        function exportData() {
+            if (currentResults) {
+                // Create CSV content
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Time Period,GDP Impact,Unemployment Impact,Consumption Impact\n";
+                
+                for (let i = 0; i < currentResults.time_periods.length; i++) {
+                    csvContent += `${currentResults.time_periods[i]},${currentResults.gdp_trajectory[i]},${currentResults.unemployment_trajectory[i]},${currentResults.consumption_trajectory[i]}\n`;
+                }
+                
+                // Download file
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "stress_testing_results.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert('Run stress test first to export data.');
+            }
+        }
+    </script>
+</body>
+</html> 

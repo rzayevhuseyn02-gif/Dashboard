@@ -910,5 +910,161 @@ def trend_analysis():
     
     return jsonify({'success': False, 'error': 'Insufficient data'})
 
+@app.route('/api/stress-testing/run', methods=['POST'])
+def run_stress_test():
+    """Run economic stress testing with custom parameters"""
+    try:
+        from flask import request
+        import math
+        
+        # Get stress test parameters
+        stress_params = request.get_json()
+        gdp_shock = stress_params.get('gdp', -5.0)  # Default -5% GDP shock
+        unemployment_shock = stress_params.get('unemployment', 2.0)  # Default +2% unemployment
+        pce_shock = stress_params.get('pce', -3.0)  # Default -3% consumption shock
+        duration = stress_params.get('duration', 6)  # Default 6 months
+        
+        if len(data) < 12:
+            return jsonify({'success': False, 'error': 'Insufficient data for stress testing'}), 400
+        
+        # Get baseline values (last 12 months average)
+        recent_data = data[-12:]
+        baseline_gdp = sum(row['GDP'] for row in recent_data) / len(recent_data)
+        baseline_pce = sum(row['Personal_Consumption_Expenditure'] for row in recent_data) / len(recent_data)
+        baseline_unemp = sum(row['Unemployment_Rate'] for row in recent_data) / len(recent_data)
+        
+        # Calculate stress trajectories
+        time_periods = list(range(1, duration + 1))
+        
+        # GDP trajectory with gradual recovery
+        gdp_trajectory = []
+        for month in time_periods:
+            # Initial shock, then gradual recovery
+            shock_factor = math.exp(-0.1 * month)  # Exponential decay
+            impact = gdp_shock * shock_factor
+            gdp_trajectory.append(impact)
+        
+        # Unemployment trajectory (opposite of GDP)
+        unemployment_trajectory = []
+        for month in time_periods:
+            # Unemployment rises initially, then gradually falls
+            shock_factor = math.exp(-0.08 * month)  # Slower recovery than GDP
+            impact = unemployment_shock * shock_factor
+            unemployment_trajectory.append(impact)
+        
+        # Consumption trajectory
+        consumption_trajectory = []
+        for month in time_periods:
+            # Consumption follows GDP but with lag
+            shock_factor = math.exp(-0.12 * month)  # Faster recovery than GDP
+            impact = pce_shock * shock_factor
+            consumption_trajectory.append(impact)
+        
+        # Calculate risk metrics
+        gdp_risk = min(10, abs(gdp_shock) / 2)  # Scale risk based on shock magnitude
+        unemployment_risk = min(10, unemployment_shock / 2)
+        consumption_risk = min(10, abs(pce_shock) / 2)
+        
+        # Overall risk score (weighted average)
+        risk_score = (gdp_risk * 0.4 + unemployment_risk * 0.4 + consumption_risk * 0.2)
+        
+        # Calculate final impacts
+        gdp_impact = gdp_trajectory[0] if gdp_trajectory else 0
+        unemployment_impact = unemployment_trajectory[0] if unemployment_trajectory else 0
+        consumption_impact = consumption_trajectory[0] if consumption_trajectory else 0
+        
+        # Create results structure
+        results = {
+            'gdp_impact': gdp_impact,
+            'unemployment_impact': unemployment_impact,
+            'consumption_impact': consumption_impact,
+            'risk_score': risk_score,
+            'gdp_risk': gdp_risk,
+            'unemployment_risk': unemployment_risk,
+            'consumption_risk': consumption_risk,
+            'time_periods': time_periods,
+            'gdp_trajectory': gdp_trajectory,
+            'unemployment_trajectory': unemployment_trajectory,
+            'consumption_trajectory': consumption_trajectory,
+            'baseline_values': {
+                'gdp': baseline_gdp,
+                'pce': baseline_pce,
+                'unemployment': baseline_unemp
+            },
+            'stress_parameters': {
+                'gdp_shock': gdp_shock,
+                'unemployment_shock': unemployment_shock,
+                'pce_shock': pce_shock,
+                'duration': duration
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'message': 'Stress test completed successfully'
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in stress testing: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': f'Stress test error: {str(e)}'}), 500
+
+@app.route('/api/stress-testing/scenarios')
+def get_stress_scenarios():
+    """Get predefined stress testing scenarios"""
+    scenarios = {
+        'recession': {
+            'name': 'Economic Recession',
+            'description': 'Severe economic downturn with GDP decline, rising unemployment, and falling consumption',
+            'parameters': {
+                'gdp': -8.0,
+                'unemployment': 4.0,
+                'pce': -6.0,
+                'duration': 12
+            },
+            'risk_level': 'High'
+        },
+        'market_crash': {
+            'name': 'Market Crash',
+            'description': 'Sudden market volatility and rapid economic contraction',
+            'parameters': {
+                'gdp': -12.0,
+                'unemployment': 6.0,
+                'pce': -8.0,
+                'duration': 6
+            },
+            'risk_level': 'Critical'
+        },
+        'inflation_shock': {
+            'name': 'Inflation Shock',
+            'description': 'High inflation periods with rapid price increases',
+            'parameters': {
+                'gdp': -3.0,
+                'unemployment': 1.0,
+                'pce': -2.0,
+                'duration': 6
+            },
+            'risk_level': 'Medium'
+        },
+        'global_crisis': {
+            'name': 'Global Crisis',
+            'description': 'International economic shocks and global financial instability',
+            'parameters': {
+                'gdp': -15.0,
+                'unemployment': 8.0,
+                'pce': -10.0,
+                'duration': 18
+            },
+            'risk_level': 'Critical'
+        }
+    }
+    
+    return jsonify({
+        'success': True,
+        'scenarios': scenarios
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
