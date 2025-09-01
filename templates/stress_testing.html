@@ -79,6 +79,7 @@
                                         <i class="fas fa-fire fa-2x text-danger mb-3"></i>
                                         <h6 class="card-title">Recession Scenario</h6>
                                         <p class="card-text small">Simulate a severe economic downturn with GDP decline, rising unemployment, and falling consumption.</p>
+                                        <small class="text-muted d-block mb-2">Duration: 18 months</small>
                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('recession')">Run Test</button>
                                     </div>
                                 </div>
@@ -90,6 +91,7 @@
                                         <i class="fas fa-chart-line-down fa-2x text-warning mb-3"></i>
                                         <h6 class="card-title">Market Crash</h6>
                                         <p class="card-text small">Test against sudden market volatility and rapid economic contraction scenarios.</p>
+                                        <small class="text-muted d-block mb-2">Duration: 24 months</small>
                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('market_crash')">Run Test</button>
                                     </div>
                                 </div>
@@ -101,6 +103,7 @@
                                         <i class="fas fa-dollar-sign fa-2x text-info mb-3"></i>
                                         <h6 class="card-title">Inflation Shock</h6>
                                         <p class="card-text small">Simulate high inflation periods with rapid price increases and monetary policy changes.</p>
+                                        <small class="text-muted d-block mb-2">Duration: 6 months</small>
                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('inflation_shock')">Run Test</button>
                                     </div>
                                 </div>
@@ -112,6 +115,7 @@
                                         <i class="fas fa-globe fa-2x text-success mb-3"></i>
                                         <h6 class="card-title">Global Crisis</h6>
                                         <p class="card-text small">Test against international economic shocks and global financial instability.</p>
+                                        <small class="text-muted d-block mb-2">Duration: 36 months (max)</small>
                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('global_crisis')">Run Test</button>
                                     </div>
                                 </div>
@@ -152,8 +156,12 @@
                                     <option value="3">3 months</option>
                                     <option value="6" selected>6 months</option>
                                     <option value="12">12 months</option>
+                                    <option value="18">18 months</option>
                                     <option value="24">24 months</option>
+                                    <option value="30">30 months</option>
+                                    <option value="36">36 months (max)</option>
                                 </select>
+                                <small class="text-muted">VAR model supports 3-36 months for comprehensive stress analysis and forecasting</small>
                             </div>
                         </div>
                         <div class="text-center">

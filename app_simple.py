@@ -1064,6 +1064,9 @@ def run_stress_test():
         pce_shock = stress_params.get('pce', -3.0)  # Default -3% consumption shock
         duration = stress_params.get('duration', 6)  # Default 6 months (same as forecasting)
         
+        # Validate duration (max 36 months)
+        duration = max(3, min(36, duration))
+        
         if len(data) < 12:
             return jsonify({'success': False, 'error': 'Insufficient data for stress testing'}), 400
         
@@ -1162,7 +1165,7 @@ def get_stress_scenarios():
                 'gdp': -8.0,
                 'unemployment': 4.0,
                 'pce': -6.0,
-                'duration': 6
+                'duration': 18
             },
             'risk_level': 'High'
         },
@@ -1173,7 +1176,7 @@ def get_stress_scenarios():
                 'gdp': -12.0,
                 'unemployment': 6.0,
                 'pce': -8.0,
-                'duration': 6
+                'duration': 24
             },
             'risk_level': 'Critical'
         },
@@ -1195,7 +1198,7 @@ def get_stress_scenarios():
                 'gdp': -15.0,
                 'unemployment': 8.0,
                 'pce': -10.0,
-                'duration': 6
+                'duration': 36
             },
             'risk_level': 'Critical'
         }
@@ -1221,8 +1224,14 @@ def get_stress_testing_chart_data():
         pce_shock = stress_params.get('pce', -0.03)
         duration = stress_params.get('duration', 6)  # Same default as forecasting
         
+        # Validate duration (max 36 months for VAR model)
+        duration = max(3, min(36, duration))
+        
         if len(data) < 24:
-            return jsonify({'success': False, 'error': 'Insufficient data for VAR stress testing'}), 400
+            return jsonify({'success': False, 'error': 'Insufficient data for VAR stress testing (minimum 24 observations required)'}), 400
+        
+        if duration > 36:
+            return jsonify({'success': False, 'error': 'Duration cannot exceed 36 months for VAR model stability and accuracy. Longer forecasts may become unreliable due to model drift and uncertainty accumulation.'}), 400
         
         # Convert data to DataFrame (same as forecasting)
         df = pd.DataFrame(data)
