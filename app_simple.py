@@ -95,6 +95,146 @@ def load_data():
 # Global data variable
 data = load_data()
 
+# VAR Helper Functions for Stress Testing
+def fit_var_model(data_df):
+    """Fit VAR model to data - same logic as forecasting"""
+    try:
+        import pandas as pd
+        from statsmodels.tsa.vector_ar.var_model import VAR
+        
+        # Differencing for stationarity (same as forecasting)
+        df_diff = data_df.diff().dropna()
+        
+        if len(df_diff) < 12:
+            return None
+        
+        # Fit VAR model (same as forecasting)
+        model = VAR(df_diff)
+        var_results = model.fit(maxlags=4, ic="aic")
+        
+        return var_results
+    except Exception as e:
+        print(f"Error fitting VAR model: {e}")
+        return None
+
+def generate_var_forecast(var_model, data_df, steps=12):
+    """Generate VAR forecast - same logic as forecasting"""
+    try:
+        import pandas as pd
+        import numpy as np
+        
+        # Differencing for stationarity (same as forecasting)
+        df_diff = data_df.diff().dropna()
+        
+        # Get lag order from fitted model
+        lag_order = var_model.k_ar
+        
+        # Forecast in differenced space (same as forecasting)
+        forecast_diff = var_model.forecast(df_diff.values[-lag_order:], steps=steps)
+        
+        # Reconstruct original levels (undo differencing) - same as forecasting
+        last_values = data_df.iloc[-1]
+        
+        # Convert forecast_diff to DataFrame for cumsum (same as forecasting)
+        forecast_diff_df = pd.DataFrame(
+            forecast_diff,
+            columns=data_df.columns
+        )
+        
+        # Cumulative sum of differenced forecasts + last actual value (same as forecasting)
+        forecast_levels = forecast_diff_df.cumsum() + last_values.values
+        
+        # Handle any NaN values that might occur
+        forecast_levels = np.where(np.isnan(forecast_levels), 0, forecast_levels)
+        
+        # Create forecast DataFrame with proper index (same as forecasting)
+        forecast_dates = pd.date_range(
+            start=data_df.index[-1] + pd.DateOffset(months=1),
+            periods=steps,
+            freq='MS'
+        )
+        
+        forecast_df = pd.DataFrame(
+            forecast_levels,
+            index=forecast_dates,
+            columns=data_df.columns
+        )
+        
+        # Ensure all values are finite numbers
+        for col in forecast_df.columns:
+            forecast_df[col] = forecast_df[col].replace([np.inf, -np.inf], 0)
+            forecast_df[col] = forecast_df[col].fillna(0)
+        
+        return forecast_df
+    except Exception as e:
+        print(f"Error generating VAR forecast: {e}")
+        return None
+
+def apply_stress_scenarios(baseline_forecast, scenarios):
+    """Apply stress scenarios to baseline forecast"""
+    try:
+        import pandas as pd
+        import numpy as np
+        
+        stress_results = {}
+        
+        for scenario_name, shocks in scenarios.items():
+            stressed = baseline_forecast.copy()
+            
+            for var_name, shock in shocks.items():
+                if var_name in stressed.columns:
+                    # Apply multiplicative shock with exponential decay
+                    for i in range(len(stressed)):
+                        decay_factor = 0.9 ** i  # Exponential decay
+                        new_value = stressed.iloc[i][var_name] * (1 + shock * decay_factor)
+                        
+                        # Ensure the value is finite and not NaN
+                        if np.isnan(new_value) or np.isinf(new_value):
+                            new_value = stressed.iloc[i][var_name]  # Keep original value if calculation fails
+                        
+                        stressed.iloc[i][var_name] = new_value
+            
+            # Final cleanup: replace any remaining NaN or inf values
+            for col in stressed.columns:
+                stressed[col] = stressed[col].replace([np.inf, -np.inf], 0)
+                stressed[col] = stressed[col].fillna(0)
+            
+            stress_results[scenario_name] = stressed
+        
+        return stress_results
+    except Exception as e:
+        print(f"Error applying stress scenarios: {e}")
+        return None
+
+def calculate_var_risk_metrics(stressed_forecast, baseline_forecast):
+    """Calculate risk metrics for VAR stress testing"""
+    try:
+        risk_metrics = {}
+        
+        for column in stressed_forecast.columns:
+            baseline_values = baseline_forecast[column].values
+            stressed_values = stressed_forecast[column].values
+            
+            # Calculate maximum deviation
+            max_deviation = max(abs(stressed_values - baseline_values))
+            
+            # Calculate average deviation
+            avg_deviation = sum(abs(stressed_values - baseline_values)) / len(stressed_values)
+            
+            # Calculate risk score (0-10)
+            risk_score = min(10, max_deviation / baseline_values[0] * 100)
+            
+            risk_metrics[column] = {
+                'max_deviation': float(max_deviation),
+                'avg_deviation': float(avg_deviation),
+                'risk_score': float(risk_score)
+            }
+        
+        return risk_metrics
+    except Exception as e:
+        print(f"Error calculating risk metrics: {e}")
+        return None
+
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -922,7 +1062,7 @@ def run_stress_test():
         gdp_shock = stress_params.get('gdp', -5.0)  # Default -5% GDP shock
         unemployment_shock = stress_params.get('unemployment', 2.0)  # Default +2% unemployment
         pce_shock = stress_params.get('pce', -3.0)  # Default -3% consumption shock
-        duration = stress_params.get('duration', 6)  # Default 6 months
+        duration = stress_params.get('duration', 6)  # Default 6 months (same as forecasting)
         
         if len(data) < 12:
             return jsonify({'success': False, 'error': 'Insufficient data for stress testing'}), 400
@@ -1022,7 +1162,7 @@ def get_stress_scenarios():
                 'gdp': -8.0,
                 'unemployment': 4.0,
                 'pce': -6.0,
-                'duration': 12
+                'duration': 6
             },
             'risk_level': 'High'
         },
@@ -1055,7 +1195,7 @@ def get_stress_scenarios():
                 'gdp': -15.0,
                 'unemployment': 8.0,
                 'pce': -10.0,
-                'duration': 18
+                'duration': 6
             },
             'risk_level': 'Critical'
         }
@@ -1065,6 +1205,106 @@ def get_stress_scenarios():
         'success': True,
         'scenarios': scenarios
     })
+
+@app.route('/api/stress-testing/chart-data', methods=['POST'])
+def get_stress_testing_chart_data():
+    """Get comprehensive chart data for stress testing with historical + VAR + stress scenarios"""
+    try:
+        from flask import request
+        import numpy as np
+        import pandas as pd
+        
+        # Get stress test parameters
+        stress_params = request.get_json()
+        gdp_shock = stress_params.get('gdp', -0.05)
+        unemployment_shock = stress_params.get('unemployment', 0.02)
+        pce_shock = stress_params.get('pce', -0.03)
+        duration = stress_params.get('duration', 6)  # Same default as forecasting
+        
+        if len(data) < 24:
+            return jsonify({'success': False, 'error': 'Insufficient data for VAR stress testing'}), 400
+        
+        # Convert data to DataFrame (same as forecasting)
+        df = pd.DataFrame(data)
+        df['observation_date'] = pd.to_datetime(df['observation_date'])
+        df.set_index('observation_date', inplace=True)
+        
+        # Select variables for VAR model (same as forecasting)
+        var_data = df[['GDP', 'Personal_Consumption_Expenditure', 'Unemployment_Rate']].copy()
+        
+        # Fit VAR model (same logic as forecasting)
+        var_model = fit_var_model(var_data)
+        if var_model is None:
+            return jsonify({'success': False, 'error': 'Failed to fit VAR model'}), 400
+        
+        # Generate baseline forecast (same as forecasting)
+        baseline_forecast = generate_var_forecast(var_model, var_data, steps=duration)
+        if baseline_forecast is None:
+            return jsonify({'success': False, 'error': 'Failed to generate baseline forecast'}), 400
+        
+        # Apply stress scenarios to baseline forecast
+        scenarios = {
+            'custom': {
+                'GDP': gdp_shock,
+                'Unemployment_Rate': unemployment_shock,
+                'Personal_Consumption_Expenditure': pce_shock
+            }
+        }
+        
+        stress_results = apply_stress_scenarios(baseline_forecast, scenarios)
+        if stress_results is None:
+            return jsonify({'success': False, 'error': 'Failed to apply stress scenarios'}), 400
+        
+        custom_stressed = stress_results['custom']
+        
+        # Helper function to safely convert values to JSON-serializable format
+        def safe_convert_to_list(series):
+            """Convert pandas series to list, handling NaN and inf values"""
+            import numpy as np
+            values = []
+            for val in series:
+                if np.isnan(val) or np.isinf(val):
+                    values.append(0.0)
+                else:
+                    values.append(float(val))
+            return values
+        
+        # Prepare chart data (same format as forecasting)
+        chart_data = {
+            'historical': {
+                'dates': df.index[-24:].strftime('%Y-%m-%d').tolist(),
+                'gdp': safe_convert_to_list(df['GDP'].iloc[-24:]),
+                'unemployment': safe_convert_to_list(df['Unemployment_Rate'].iloc[-24:]),
+                'consumption': safe_convert_to_list(df['Personal_Consumption_Expenditure'].iloc[-24:])
+            },
+            'baseline': {
+                'dates': baseline_forecast.index.strftime('%Y-%m-%d').tolist(),
+                'gdp': safe_convert_to_list(baseline_forecast['GDP']),
+                'unemployment': safe_convert_to_list(baseline_forecast['Unemployment_Rate']),
+                'consumption': safe_convert_to_list(baseline_forecast['Personal_Consumption_Expenditure'])
+            },
+            'stressed': {
+                'dates': custom_stressed.index.strftime('%Y-%m-%d').tolist(),
+                'gdp': safe_convert_to_list(custom_stressed['GDP']),
+                'unemployment': safe_convert_to_list(custom_stressed['Unemployment_Rate']),
+                'consumption': safe_convert_to_list(custom_stressed['Personal_Consumption_Expenditure'])
+            },
+            'stress_parameters': {
+                'gdp_shock': gdp_shock,
+                'unemployment_shock': unemployment_shock,
+                'pce_shock': pce_shock,
+                'duration': duration
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'chart_data': chart_data
+        })
+        
+    except Exception as e:
+        print(f"Error in comprehensive chart data: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

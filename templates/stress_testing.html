@@ -166,6 +166,20 @@
             </div>
         </div>
 
+        <!-- Loading Section -->
+        <div class="row mb-4" id="loading" style="display: none;">
+            <div class="col-12 text-center">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-0">Running stress test analysis...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stress Test Results -->
         <div class="row mb-4" id="stress-results" style="display: none;">
             <div class="col-12">
@@ -233,15 +247,69 @@
             </div>
         </div>
 
-        <!-- Loading State -->
-        <div class="row" id="loading" style="display: none;">
-            <div class="col-12 text-center">
+        <!-- Comprehensive Chart Section -->
+        <div class="row mb-4" id="comprehensive-chart-section" style="display: none;">
+            <div class="col-12">
                 <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Comprehensive Analysis: Historical + VAR Forecast + Stress Scenarios
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <div class="spinner-border text-primary mb-3" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Indicator:</label>
+                                <select id="chart-indicator" class="form-select">
+                                    <option value="gdp">GDP</option>
+                                    <option value="unemployment">Unemployment Rate</option>
+                                    <option value="consumption">Personal Consumption</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Chart Type:</label>
+                                <select id="chart-type" class="form-select">
+                                    <option value="combined">Combined View</option>
+                                    <option value="separate">Separate Charts</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Time Range:</label>
+                                <select id="time-range" class="form-select">
+                                    <option value="12">12 Months</option>
+                                    <option value="24" selected>24 Months</option>
+                                    <option value="36">36 Months</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button id="update-chart" class="btn btn-primary w-100">
+                                    <i class="fas fa-sync-alt"></i> Update Chart
+                                </button>
+                            </div>
                         </div>
-                        <p class="mb-0">Running stress test analysis...</p>
+                        <div id="comprehensive-chart-container">
+                            <div id="comprehensive-chart" style="height: 500px;"></div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="alert alert-info">
+                                        <strong>Historical Data:</strong> <span id="historical-range"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="alert alert-success">
+                                        <strong>VAR Forecast:</strong> <span id="forecast-range"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="alert alert-warning">
+                                        <strong>Stress Scenario:</strong> <span id="stress-info"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -256,12 +324,12 @@
         function runStressTest(scenario) {
             showLoading();
             
-            // Define scenario parameters
+            // Define scenario parameters (as decimals, not percentages)
             const scenarios = {
-                'recession': { gdp: -8, unemployment: 4, pce: -6, duration: 12 },
-                'market_crash': { gdp: -12, unemployment: 6, pce: -8, duration: 6 },
-                'inflation_shock': { gdp: -3, unemployment: 1, pce: -2, duration: 6 },
-                'global_crisis': { gdp: -15, unemployment: 8, pce: -10, duration: 18 }
+                'recession': { gdp: -0.08, unemployment: 0.04, pce: -0.06, duration: 12 },
+                'market_crash': { gdp: -0.12, unemployment: 0.06, pce: -0.08, duration: 6 },
+                'inflation_shock': { gdp: -0.03, unemployment: 0.01, pce: -0.02, duration: 6 },
+                'global_crisis': { gdp: -0.15, unemployment: 0.08, pce: -0.10, duration: 18 }
             };
             
             const params = scenarios[scenario];
@@ -276,10 +344,11 @@
             if (customParams) {
                 params = customParams;
             } else {
+                // Convert percentage values to decimal (divide by 100)
                 params = {
-                    gdp: parseFloat(document.getElementById('gdp-shock').value),
-                    unemployment: parseFloat(document.getElementById('unemployment-shock').value),
-                    pce: parseFloat(document.getElementById('pce-shock').value),
+                    gdp: parseFloat(document.getElementById('gdp-shock').value) / 100,
+                    unemployment: parseFloat(document.getElementById('unemployment-shock').value) / 100,
+                    pce: parseFloat(document.getElementById('pce-shock').value) / 100,
                     duration: parseInt(document.getElementById('duration').value)
                 };
             }
@@ -314,6 +383,7 @@
             
             // Show results section
             document.getElementById('stress-results').style.display = 'block';
+            document.getElementById('comprehensive-chart-section').style.display = 'block';
             
             // Populate results grid
             const resultsGrid = document.getElementById('results-grid');
@@ -364,69 +434,209 @@
             
             // Create charts
             createCharts(results);
+            
+            // Load comprehensive chart data
+            loadComprehensiveChartData(results);
         }
         
         // Create visualization charts
         function createCharts(results) {
-            // GDP Impact Chart
-            const gdpData = [{
-                x: results.time_periods,
-                y: results.gdp_trajectory,
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'GDP Trajectory',
-                line: { color: '#1f77b4', width: 3 },
-                marker: { size: 6 }
-            }];
+            console.log("=== FRONTEND DEBUG ===");
+            console.log("Results:", results);
+            
+            // Check if baseline_forecast exists, if not use simple trajectory charts
+            if (!results.baseline_forecast) {
+                console.log("No baseline_forecast found, using simple trajectory charts");
+                
+                // GDP Trajectory Chart
+                const gdpData = [
+                    {
+                        x: results.time_periods,
+                        y: results.gdp_trajectory,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'GDP Impact',
+                        line: { color: '#d62728', width: 3 },
+                        marker: { size: 6 }
+                    }
+                ];
+                
+                const gdpLayout = {
+                    title: 'GDP Impact Over Time',
+                    xaxis: { title: 'Time Period (months)' },
+                    yaxis: { title: 'GDP Change (%)' },
+                    template: 'plotly_white',
+                    height: 300,
+                    legend: { x: 0.02, y: 0.98 }
+                };
+                
+                Plotly.newPlot('gdp-chart', gdpData, gdpLayout);
+                
+                // Unemployment Trajectory Chart
+                const unemploymentData = [
+                    {
+                        x: results.time_periods,
+                        y: results.unemployment_trajectory,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Unemployment Impact',
+                        line: { color: '#ff7f0e', width: 3 },
+                        marker: { size: 6 }
+                    }
+                ];
+                
+                const unemploymentLayout = {
+                    title: 'Unemployment Impact Over Time',
+                    xaxis: { title: 'Time Period (months)' },
+                    yaxis: { title: 'Unemployment Change (%)' },
+                    template: 'plotly_white',
+                    height: 300,
+                    legend: { x: 0.02, y: 0.98 }
+                };
+                
+                Plotly.newPlot('unemployment-chart', unemploymentData, unemploymentLayout);
+                
+                // Consumption Trajectory Chart
+                const consumptionData = [
+                    {
+                        x: results.time_periods,
+                        y: results.consumption_trajectory,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Consumption Impact',
+                        line: { color: '#2ca02c', width: 3 },
+                        marker: { size: 6 }
+                    }
+                ];
+                
+                const consumptionLayout = {
+                    title: 'Consumption Impact Over Time',
+                    xaxis: { title: 'Time Period (months)' },
+                    yaxis: { title: 'Consumption Change (%)' },
+                    template: 'plotly_white',
+                    height: 300,
+                    legend: { x: 0.02, y: 0.98 }
+                };
+                
+                Plotly.newPlot('consumption-chart', consumptionData, consumptionLayout);
+                
+                return;
+            }
+            
+            // If baseline_forecast exists, use comparison charts
+            console.log("Baseline GDP:", results.baseline_forecast.gdp);
+            console.log("GDP Trajectory:", results.gdp_trajectory);
+            console.log("=== END FRONTEND DEBUG ===");
+            
+            // GDP Comparison Chart (Baseline vs Stressed)
+            const gdpData = [
+                {
+                    x: results.time_periods,
+                    y: results.gdp_trajectory,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Stressed GDP',
+                    line: { color: '#d62728', width: 3 },
+                    marker: { size: 6 }
+                },
+                {
+                    x: results.time_periods,
+                    y: results.baseline_forecast.gdp.map((val, index) => {
+                        // Convert baseline forecast to percentage change from first value
+                        const firstValue = results.baseline_forecast.gdp[0];
+                        const percentageChange = ((val - firstValue) / firstValue) * 100;
+                        console.log(`Baseline GDP ${index}: ${val} -> ${percentageChange}%`);
+                        return percentageChange;
+                    }),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'VAR Baseline GDP',
+                    line: { color: '#1f77b4', width: 2, dash: 'dash' },
+                    marker: { size: 4 }
+                }
+            ];
             
             const gdpLayout = {
-                title: 'GDP Impact Over Time',
+                title: 'GDP: VAR Baseline vs Stressed Scenario',
                 xaxis: { title: 'Time Period (months)' },
                 yaxis: { title: 'GDP Change (%)' },
                 template: 'plotly_white',
-                height: 300
+                height: 300,
+                legend: { x: 0.02, y: 0.98 }
             };
             
             Plotly.newPlot('gdp-chart', gdpData, gdpLayout);
             
-            // Unemployment Impact Chart
-            const unemploymentData = [{
-                x: results.time_periods,
-                y: results.unemployment_trajectory,
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'Unemployment Trajectory',
-                line: { color: '#d62728', width: 3 },
-                marker: { size: 6 }
-            }];
+            // Unemployment Comparison Chart
+            const unemploymentData = [
+                {
+                    x: results.time_periods,
+                    y: results.unemployment_trajectory,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Stressed Unemployment',
+                    line: { color: '#d62728', width: 3 },
+                    marker: { size: 6 }
+                },
+                {
+                    x: results.time_periods,
+                    y: results.baseline_forecast.unemployment.map((val, index) => {
+                        // Convert baseline forecast to percentage change from first value
+                        const firstValue = results.baseline_forecast.unemployment[0];
+                        return ((val - firstValue) / firstValue) * 100;
+                    }),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'VAR Baseline Unemployment',
+                    line: { color: '#ff7f0e', width: 2, dash: 'dash' },
+                    marker: { size: 4 }
+                }
+            ];
             
             const unemploymentLayout = {
-                title: 'Unemployment Impact Over Time',
+                title: 'Unemployment: VAR Baseline vs Stressed Scenario',
                 xaxis: { title: 'Time Period (months)' },
                 yaxis: { title: 'Unemployment Change (%)' },
                 template: 'plotly_white',
-                height: 300
+                height: 300,
+                legend: { x: 0.02, y: 0.98 }
             };
             
             Plotly.newPlot('unemployment-chart', unemploymentData, unemploymentLayout);
             
-            // Consumption Impact Chart
-            const consumptionData = [{
-                x: results.time_periods,
-                y: results.consumption_trajectory,
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'Consumption Trajectory',
-                line: { color: '#2ca02c', width: 3 },
-                marker: { size: 6 }
-            }];
+            // Consumption Comparison Chart
+            const consumptionData = [
+                {
+                    x: results.time_periods,
+                    y: results.consumption_trajectory,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Stressed Consumption',
+                    line: { color: '#d62728', width: 3 },
+                    marker: { size: 6 }
+                },
+                {
+                    x: results.time_periods,
+                    y: results.baseline_forecast.consumption.map((val, index) => {
+                        // Convert baseline forecast to percentage change from first value
+                        const firstValue = results.baseline_forecast.consumption[0];
+                        return ((val - firstValue) / firstValue) * 100;
+                    }),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'VAR Baseline Consumption',
+                    line: { color: '#2ca02c', width: 2, dash: 'dash' },
+                    marker: { size: 4 }
+                }
+            ];
             
             const consumptionLayout = {
-                title: 'Consumption Impact Over Time',
+                title: 'Consumption: VAR Baseline vs Stressed Scenario',
                 xaxis: { title: 'Time Period (months)' },
                 yaxis: { title: 'Consumption Change (%)' },
                 template: 'plotly_white',
-                height: 300
+                height: 300,
+                legend: { x: 0.02, y: 0.98 }
             };
             
             Plotly.newPlot('consumption-chart', consumptionData, consumptionLayout);
@@ -452,6 +662,123 @@
             Plotly.newPlot('risk-chart', riskData, riskLayout);
         }
         
+        // Load comprehensive chart data
+        function loadComprehensiveChartData(results) {
+            // Check if stress_parameters exists
+            if (!results.stress_parameters) {
+                console.log("No stress_parameters found, skipping comprehensive chart");
+                return;
+            }
+            
+            const params = {
+                gdp: results.stress_parameters.gdp_shock,
+                unemployment: results.stress_parameters.unemployment_shock,
+                pce: results.stress_parameters.pce_shock,
+                duration: results.stress_parameters.duration
+            };
+            
+            fetch('/api/stress-testing/chart-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    createComprehensiveChart(data.chart_data);
+                } else {
+                    console.error('Error loading chart data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Create comprehensive chart
+        function createComprehensiveChart(chartData) {
+            const indicator = document.getElementById('chart-indicator').value;
+            const chartType = document.getElementById('chart-type').value;
+            
+            // Prepare data based on selected indicator
+            let historicalValues, baselineValues, stressedValues;
+            let yAxisTitle;
+            
+            switch(indicator) {
+                case 'gdp':
+                    historicalValues = chartData.historical.gdp;
+                    baselineValues = chartData.baseline.gdp;
+                    stressedValues = chartData.stressed.gdp;
+                    yAxisTitle = 'GDP (Billions of Dollars)';
+                    break;
+                case 'unemployment':
+                    historicalValues = chartData.historical.unemployment;
+                    baselineValues = chartData.baseline.unemployment;
+                    stressedValues = chartData.stressed.unemployment;
+                    yAxisTitle = 'Unemployment Rate (%)';
+                    break;
+                case 'consumption':
+                    historicalValues = chartData.historical.consumption;
+                    baselineValues = chartData.baseline.consumption;
+                    stressedValues = chartData.stressed.consumption;
+                    yAxisTitle = 'Personal Consumption (Billions of Dollars)';
+                    break;
+            }
+            
+            // Create chart data
+            const data = [
+                {
+                    x: chartData.historical.dates,
+                    y: historicalValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Historical Data',
+                    line: { color: '#1f77b4', width: 2 },
+                    marker: { size: 4 }
+                },
+                {
+                    x: chartData.baseline.dates,
+                    y: baselineValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'VAR Baseline Forecast',
+                    line: { color: '#2ca02c', width: 2, dash: 'dash' },
+                    marker: { size: 4 }
+                },
+                {
+                    x: chartData.stressed.dates,
+                    y: stressedValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Stress Scenario',
+                    line: { color: '#d62728', width: 2 },
+                    marker: { size: 4 }
+                }
+            ];
+            
+            const layout = {
+                title: `${indicator.toUpperCase()}: Historical Data + VAR Forecast + Stress Scenario`,
+                xaxis: { title: 'Date' },
+                yaxis: { title: yAxisTitle },
+                template: 'plotly_white',
+                height: 500,
+                legend: { x: 0.02, y: 0.98 },
+                hovermode: 'x unified'
+            };
+            
+            Plotly.newPlot('comprehensive-chart', data, layout);
+            
+            // Update info panels
+            document.getElementById('historical-range').textContent = 
+                `${chartData.historical.dates[0]} to ${chartData.historical.dates[chartData.historical.dates.length-1]}`;
+            document.getElementById('forecast-range').textContent = 
+                `${chartData.baseline.dates[0]} to ${chartData.baseline.dates[chartData.baseline.dates.length-1]}`;
+            document.getElementById('stress-info').textContent = 
+                `GDP: ${(chartData.stress_parameters?.gdp_shock * 100).toFixed(1)}%, Unemployment: ${(chartData.stress_parameters?.unemployment_shock * 100).toFixed(1)}%, PCE: ${(chartData.stress_parameters?.pce_shock * 100).toFixed(1)}%`;
+        }
+        
         // Get risk level description
         function getRiskLevel(score) {
             if (score < 3) return 'Low Risk';
@@ -469,22 +796,6 @@
         function hideLoading() {
             document.getElementById('loading').style.display = 'none';
         }
-        
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Stress Testing page loaded');
-            
-            // Set current date
-            const currentDate = new Date().toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            const dateElement = document.querySelector('#current-date');
-            if (dateElement) {
-                dateElement.textContent = currentDate;
-            }
-        });
         
         // Export data function
         function exportData() {
@@ -509,6 +820,35 @@
                 alert('Run stress test first to export data.');
             }
         }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Stress Testing page loaded');
+            
+            // Set current date
+            const currentDate = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const dateElement = document.querySelector('#current-date');
+            if (dateElement) {
+                dateElement.textContent = currentDate;
+            }
+            
+            // Event listeners for comprehensive chart
+            document.getElementById('update-chart').addEventListener('click', function() {
+                if (currentResults) {
+                    loadComprehensiveChartData(currentResults);
+                }
+            });
+            
+            document.getElementById('chart-indicator').addEventListener('change', function() {
+                if (currentResults) {
+                    loadComprehensiveChartData(currentResults);
+                }
+            });
+        });
     </script>
 </body>
 </html> 
