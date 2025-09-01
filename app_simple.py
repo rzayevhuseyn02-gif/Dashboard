@@ -171,7 +171,7 @@ def generate_var_forecast(var_model, data_df, steps=12):
         return None
 
 def apply_stress_scenarios(baseline_forecast, scenarios):
-    """Apply stress scenarios to baseline forecast"""
+    """Apply stress scenarios to baseline forecast with FIXED percentage deviation"""
     try:
         import pandas as pd
         import numpy as np
@@ -183,16 +183,32 @@ def apply_stress_scenarios(baseline_forecast, scenarios):
             
             for var_name, shock in shocks.items():
                 if var_name in stressed.columns:
-                    # Apply multiplicative shock with exponential decay
+                    # Get baseline values for this variable
+                    baseline_values = baseline_forecast[var_name].values
+                    
+                    # Apply FIXED shock percentage to baseline forecast (no decay)
+                    # shock is already in decimal format (e.g., -0.05 for -5%)
                     for i in range(len(stressed)):
-                        decay_factor = 0.9 ** i  # Exponential decay
-                        new_value = stressed.iloc[i][var_name] * (1 + shock * decay_factor)
+                        # Apply shock as FIXED percentage deviation from baseline
+                        # If shock is -0.05, then stressed = baseline * (1 - 0.05) = baseline * 0.95
+                        # This means stressed values will be consistently 5% below baseline
+                        new_value = baseline_values[i] * (1 + shock)
                         
-                        # Ensure the value is finite and not NaN
-                        if np.isnan(new_value) or np.isinf(new_value):
-                            new_value = stressed.iloc[i][var_name]  # Keep original value if calculation fails
-                        
+                        # Ensure the value follows the baseline pattern but with fixed deviation
                         stressed.iloc[i][var_name] = new_value
+                    
+                    # Debug: Print first few values to verify fixed percentage
+                    print(f"=== {scenario_name} - {var_name} DEBUG ===")
+                    print(f"Shock: {shock} ({shock*100:.1f}%)")
+                    print(f"First 3 baseline: {baseline_values[:3]}")
+                    print(f"First 3 stressed: {stressed[var_name].iloc[:3].values}")
+                    if len(baseline_values) > 0:
+                        first_deviation = ((stressed[var_name].iloc[0] - baseline_values[0]) / baseline_values[0]) * 100
+                        print(f"First period deviation: {first_deviation:.2f}%")
+                        if len(baseline_values) > 1:
+                            last_deviation = ((stressed[var_name].iloc[-1] - baseline_values[-1]) / baseline_values[-1]) * 100
+                            print(f"Last period deviation: {last_deviation:.2f}%")
+                    print("=== END DEBUG ===")
             
             # Final cleanup: replace any remaining NaN or inf values
             for col in stressed.columns:
@@ -1162,45 +1178,49 @@ def get_stress_scenarios():
             'name': 'Economic Recession',
             'description': 'Severe economic downturn with GDP decline, rising unemployment, and falling consumption',
             'parameters': {
-                'gdp': -8.0,
-                'unemployment': 4.0,
-                'pce': -6.0,
+                'gdp': -0.08,  # -8% as decimal
+                'unemployment': 0.04,  # +4% as decimal
+                'pce': -0.06,  # -6% as decimal
                 'duration': 18
             },
-            'risk_level': 'High'
+            'risk_level': 'High',
+            'trend_consistency': 'Maintains baseline economic trends while applying recession shocks'
         },
         'market_crash': {
             'name': 'Market Crash',
             'description': 'Sudden market volatility and rapid economic contraction',
             'parameters': {
-                'gdp': -12.0,
-                'unemployment': 6.0,
-                'pce': -8.0,
+                'gdp': -0.12,  # -12% as decimal
+                'unemployment': 0.06,  # +6% as decimal
+                'pce': -0.08,  # -8% as decimal
                 'duration': 24
             },
-            'risk_level': 'Critical'
+            'risk_level': 'Critical',
+            'trend_consistency': 'Applies severe shocks while preserving baseline economic trajectory patterns'
         },
         'inflation_shock': {
             'name': 'Inflation Shock',
             'description': 'High inflation periods with rapid price increases',
             'parameters': {
-                'gdp': -3.0,
-                'unemployment': 1.0,
-                'pce': -2.0,
+                'gdp': -0.03,  # -3% as decimal
+                'unemployment': 0.01,  # +1% as decimal
+                'pce': -0.02,  # -2% as decimal
                 'duration': 6
             },
-            'risk_level': 'Medium'
+            'risk_level': 'Medium',
+            'trend_consistency': 'Applies inflation shocks while maintaining baseline economic growth patterns'
         },
         'global_crisis': {
             'name': 'Global Crisis',
             'description': 'International economic shocks and global financial instability',
             'parameters': {
-                'gdp': -15.0,
-                'unemployment': 8.0,
-                'pce': -10.0,
+                'gdp': -0.15,  # -15% as decimal
+                'unemployment': 0.08,  # +8% as decimal
+                'pce': -0.10,  # -10% as decimal
                 'duration': 36
             },
-            'risk_level': 'Critical'
+            'risk_level': 'Critical',
+            'trend_consistency': 'Applies severe global crisis shocks while preserving long-term economic trajectory patterns'
         }
     }
     
