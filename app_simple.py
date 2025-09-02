@@ -251,6 +251,282 @@ def calculate_var_risk_metrics(stressed_forecast, baseline_forecast):
         print(f"Error calculating risk metrics: {e}")
         return None
 
+def calculate_ews_risk_score(historical_data, baseline_forecast, stress_scenario):
+    """Calculate EWS Risk Score using proper z-score methodology with StandardScaler"""
+    try:
+        import pandas as pd
+        import numpy as np
+        from sklearn.preprocessing import StandardScaler
+        
+        # Debug: Check data structure
+        print(f"=== EWS DEBUG (Z-Score Method) ===")
+        print(f"Historical data type: {type(historical_data)}")
+        print(f"Historical data length: {len(historical_data) if hasattr(historical_data, '__len__') else 'N/A'}")
+        
+        # Convert to DataFrame if it's a list
+        if isinstance(historical_data, list):
+            df = pd.DataFrame(historical_data)
+        else:
+            df = historical_data.copy()
+        
+        # Ensure we have the right columns
+        required_columns = ['GDP', 'Personal_Consumption_Expenditure', 'Unemployment_Rate']
+        for col in required_columns:
+            if col not in df.columns:
+                print(f"Missing column: {col}")
+                return {
+                    'error': f'Missing required column: {col}',
+                    'risk_score': 0,
+                    'risk_level': 'Unknown'
+                }
+        
+        # Convert to numeric and handle any non-numeric values
+        for col in required_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # Remove any rows with NaN values
+        df_clean = df.dropna(subset=required_columns)
+        
+        if len(df_clean) < 24:  # Need at least 24 observations for robust statistics
+            print(f"Insufficient clean data: {len(df_clean)} rows (minimum 24 required)")
+            return {
+                'error': 'Insufficient clean data for EWS calculation (minimum 24 observations required)',
+                'risk_score': 0,
+                'risk_level': 'Unknown'
+            }
+        
+        print(f"Clean data shape: {df_clean.shape}")
+        print(f"GDP range: {df_clean['GDP'].min()} to {df_clean['GDP'].max()}")
+        print(f"PCE range: {df_clean['Personal_Consumption_Expenditure'].min()} to {df_clean['Personal_Consumption_Expenditure'].max()}")
+        print(f"Unemployment range: {df_clean['Unemployment_Rate'].min()} to {df_clean['Unemployment_Rate'].max()}")
+        
+        # 1. Calculate indicators from levels (proper methodology)
+        def calculate_indicators(levels_df):
+            """Calculate GDP_growth, PCE_growth, Unemployment_change from levels"""
+            indicators = pd.DataFrame(index=levels_df.index)
+            indicators['GDP_growth'] = levels_df['GDP'].pct_change()
+            indicators['PCE_growth'] = levels_df['Personal_Consumption_Expenditure'].pct_change()
+            indicators['Unemployment_change'] = levels_df['Unemployment_Rate'].diff()
+            return indicators.dropna()
+        
+        # Calculate indicators for historical data
+        hist_indicators = calculate_indicators(df_clean)
+        print(f"Historical indicators shape: {hist_indicators.shape}")
+        print(f"GDP growth sample: {hist_indicators['GDP_growth'].head().tolist()}")
+        print(f"PCE growth sample: {hist_indicators['PCE_growth'].head().tolist()}")
+        print(f"Unemployment change sample: {hist_indicators['Unemployment_change'].head().tolist()}")
+        
+        # 2. Fit StandardScaler ONLY on historical data (avoid look-ahead bias)
+        scaler = StandardScaler()
+        z_hist = scaler.fit_transform(hist_indicators[['GDP_growth', 'PCE_growth', 'Unemployment_change']])
+        z_hist_df = pd.DataFrame(z_hist, index=hist_indicators.index, 
+                                columns=['GDP_growth', 'PCE_growth', 'Unemployment_change'])
+        
+        print(f"Z-scores mean: {z_hist_df.mean().tolist()}")
+        print(f"Z-scores std: {z_hist_df.std().tolist()}")
+        
+        # 3. Calculate thresholds in z-space (K = 1.0 for 68% confidence interval)
+        K = 1.0
+        thr_std = {}
+        for col in ['GDP_growth', 'PCE_growth', 'Unemployment_change']:
+            thr_std[col] = np.mean(z_hist_df[col]) + K * np.std(z_hist_df[col])
+        
+        print(f"Z-space thresholds (K={K}): {thr_std}")
+        
+        # 4. Convert to raw units for interpretation
+        mu = scaler.mean_
+        sigma = scaler.scale_
+        thr_raw = {}
+        for i, col in enumerate(['GDP_growth', 'PCE_growth', 'Unemployment_change']):
+            if col in ['GDP_growth', 'PCE_growth']:
+                # Lower tail risk (negative growth)
+                thr_raw[f"{col}_neg"] = mu[i] - thr_std[col] * sigma[i]
+            else:
+                # Upper tail risk (positive unemployment change)
+                thr_raw[f"{col}_pos"] = mu[i] + thr_std[col] * sigma[i]
+        
+        print(f"Raw thresholds: {thr_raw}")
+        
+        # 5. Calculate warning signals for historical data
+        def compute_signals(indicators_df, scaler, thr_std):
+            """Compute warning signals for given indicators"""
+            # Transform to z-space
+            z_scores = scaler.transform(indicators_df[['GDP_growth', 'PCE_growth', 'Unemployment_change']])
+            z_df = pd.DataFrame(z_scores, index=indicators_df.index, 
+                              columns=['GDP_growth', 'PCE_growth', 'Unemployment_change'])
+            
+            # Warning signals (proper z-score methodology)
+            gdp_warning = (z_df['GDP_growth'] < -thr_std['GDP_growth'])
+            pce_warning = (z_df['PCE_growth'] < -thr_std['PCE_growth'])
+            unemp_warning = (z_df['Unemployment_change'] > thr_std['Unemployment_change'])
+            
+            # EWS score (0-3)
+            ews_score = gdp_warning.astype(int) + pce_warning.astype(int) + unemp_warning.astype(int)
+            
+            return {
+                'gdp_warning': gdp_warning,
+                'pce_warning': pce_warning,
+                'unemp_warning': unemp_warning,
+                'ews_score': ews_score,
+                'z_scores': z_df
+            }
+        
+        # Calculate signals for historical data
+        hist_signals = compute_signals(hist_indicators, scaler, thr_std)
+        
+        # 6. Calculate overall risk metrics
+        total_warnings = (hist_signals['gdp_warning'].sum() + 
+                         hist_signals['pce_warning'].sum() + 
+                         hist_signals['unemp_warning'].sum())
+        
+        # 7. Get warning dates for each indicator
+        warning_dates = {}
+        
+        # Create a mapping from hist_indicators index to actual dates
+        # hist_indicators starts from the second row of data (index 1)
+        date_mapping = {}
+        for i in range(len(hist_indicators)):
+            if i + 1 < len(data):
+                # Use the actual date from the data list
+                date_mapping[i] = data[i + 1]['observation_date']
+        
+        print(f"DEBUG: Created date mapping for {len(date_mapping)} indices")
+        print(f"DEBUG: Sample mapping: {list(date_mapping.items())[:5]}")
+        
+        for indicator, warning_series in [('GDP_growth', hist_signals['gdp_warning']), 
+                                        ('PCE_growth', hist_signals['pce_warning']), 
+                                        ('Unemployment_change', hist_signals['unemp_warning'])]:
+            # Get warning dates safely - use date mapping
+            warning_indices = warning_series[warning_series].index
+            warning_dates_list = []
+            
+            print(f"DEBUG: {indicator} warning indices: {warning_indices}")
+            
+            for idx in warning_indices:
+                try:
+                    # Get the actual date from the date mapping
+                    if hasattr(idx, 'strftime'):
+                        # If idx is already a datetime
+                        warning_dates_list.append(idx.strftime('%Y-%m-%d'))
+                    else:
+                        # If idx is a position number, get the corresponding date from mapping
+                        if isinstance(idx, (int, np.integer)) and idx in date_mapping:
+                            warning_dates_list.append(date_mapping[idx])
+                        else:
+                            warning_dates_list.append(str(idx))
+                except Exception as e:
+                    print(f"Warning: Could not convert index {idx} to date: {e}")
+                    warning_dates_list.append(str(idx))
+            
+            warning_dates[indicator] = warning_dates_list
+        
+        print(f"Warning dates:")
+        for indicator, dates in warning_dates.items():
+            print(f"  {indicator}: {dates}")
+        
+        # Risk score (0-10 scale)
+        risk_score = min(10, total_warnings / len(hist_indicators) * 100)
+        
+        print(f"Total warnings: {total_warnings}")
+        print(f"Risk score: {risk_score:.2f}")
+        
+        # 8. Calculate forecasting-based warnings (NEW FEATURE)
+        forecast_warnings = {}
+        forecast_warning_dates = {}
+        
+        if baseline_forecast is not None:
+            print("=== FORECASTING EWS ANALYSIS ===")
+            
+            # Calculate indicators for forecast data
+            forecast_indicators = calculate_indicators(baseline_forecast)
+            print(f"Forecast indicators shape: {forecast_indicators.shape}")
+            
+            # Apply same scaler and thresholds to forecast data
+            forecast_signals = compute_signals(forecast_indicators, scaler, thr_std)
+            
+            # Count forecast warnings
+            forecast_warnings = {
+                'gdp': int(forecast_signals['gdp_warning'].sum()),
+                'pce': int(forecast_signals['pce_warning'].sum()),
+                'unemployment': int(forecast_signals['unemp_warning'].sum())
+            }
+            
+            # Get forecast warning dates
+            forecast_date_mapping = {}
+            for i in range(len(forecast_indicators)):
+                if i < len(baseline_forecast):
+                    forecast_date_mapping[i] = baseline_forecast.index[i].strftime('%Y-%m-%d')
+            
+            for indicator, warning_series in [('GDP_growth', forecast_signals['gdp_warning']), 
+                                            ('PCE_growth', forecast_signals['pce_warning']), 
+                                            ('Unemployment_change', forecast_signals['unemp_warning'])]:
+                warning_indices = warning_series[warning_series].index
+                forecast_warning_dates_list = []
+                
+                for idx in warning_indices:
+                    if isinstance(idx, (int, np.integer)) and idx in forecast_date_mapping:
+                        forecast_warning_dates_list.append(forecast_date_mapping[idx])
+                    else:
+                        forecast_warning_dates_list.append(str(idx))
+                
+                forecast_warning_dates[indicator] = forecast_warning_dates_list
+            
+            print(f"Forecast warnings: {forecast_warnings}")
+            print(f"Forecast warning dates: {forecast_warning_dates}")
+            print("=== END FORECASTING EWS ===")
+        
+        # 9. Risk level determination
+        if risk_score < 3:
+            risk_level = "Low"
+        elif risk_score < 6:
+            risk_level = "Medium"
+        elif risk_score < 8:
+            risk_level = "High"
+        else:
+            risk_level = "Critical"
+        
+        print(f"Risk level: {risk_level}")
+        print("=== END EWS DEBUG ===")
+        
+        return {
+            'risk_score': round(risk_score, 2),
+            'risk_level': risk_level,
+            'warnings': {
+                'gdp': int(hist_signals['gdp_warning'].sum()),
+                'pce': int(hist_signals['pce_warning'].sum()),
+                'unemployment': int(hist_signals['unemp_warning'].sum())
+            },
+            'warning_dates': warning_dates,
+            'forecast_warnings': forecast_warnings,
+            'forecast_warning_dates': forecast_warning_dates,
+            'thresholds': {
+                'gdp_growth_neg': round(thr_raw['GDP_growth_neg'], 4),
+                'pce_growth_neg': round(thr_raw['PCE_growth_neg'], 4),
+                'unemployment_change_pos': round(thr_raw['Unemployment_change_pos'], 4)
+            },
+            'z_thresholds': {
+                'gdp_growth': round(thr_std['GDP_growth'], 4),
+                'pce_growth': round(thr_std['PCE_growth'], 4),
+                'unemployment_change': round(thr_std['Unemployment_change'], 4)
+            },
+            'k_value': K,
+            'methodology': 'StandardScaler + Z-score + 68% CI + Forecasting EWS',
+            'scaler_params': {
+                'mean': mu.tolist(),
+                'scale': sigma.tolist()
+            }
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"EWS Error: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return {
+            'error': str(e),
+            'risk_score': 0,
+            'risk_level': 'Unknown'
+        }
+
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -1127,6 +1403,32 @@ def run_stress_test():
         # Overall risk score (weighted average)
         risk_score = (gdp_risk * 0.4 + unemployment_risk * 0.4 + consumption_risk * 0.2)
         
+        # Calculate EWS Risk Score with VAR forecasting
+        # Generate VAR forecast for EWS analysis
+        try:
+            import pandas as pd
+            from statsmodels.tsa.vector_ar.var_model import VAR
+            
+            # Convert data to DataFrame for VAR
+            df = pd.DataFrame(data)
+            df['observation_date'] = pd.to_datetime(df['observation_date'])
+            df.set_index('observation_date', inplace=True)
+            
+            # Select variables for VAR model
+            var_data = df[['GDP', 'Personal_Consumption_Expenditure', 'Unemployment_Rate']].copy()
+            
+            # Fit VAR model
+            var_model = fit_var_model(var_data)
+            if var_model is not None:
+                # Generate baseline forecast
+                baseline_forecast = generate_var_forecast(var_model, var_data, steps=12)
+                ews_risk_data = calculate_ews_risk_score(data, baseline_forecast, stress_params)
+            else:
+                ews_risk_data = calculate_ews_risk_score(data, None, stress_params)
+        except Exception as e:
+            print(f"Error in VAR forecasting for EWS: {e}")
+            ews_risk_data = calculate_ews_risk_score(data, None, stress_params)
+        
         # Calculate final impacts
         gdp_impact = gdp_trajectory[0] if gdp_trajectory else 0
         unemployment_impact = unemployment_trajectory[0] if unemployment_trajectory else 0
@@ -1141,6 +1443,13 @@ def run_stress_test():
             'gdp_risk': gdp_risk,
             'unemployment_risk': unemployment_risk,
             'consumption_risk': consumption_risk,
+            'ews_risk_score': ews_risk_data.get('risk_score', 0),
+            'ews_risk_level': ews_risk_data.get('risk_level', 'Unknown'),
+            'ews_warnings': ews_risk_data.get('warnings', {}),
+            'ews_forecast_warnings': ews_risk_data.get('forecast_warnings', {}),
+            'ews_warning_dates': ews_risk_data.get('warning_dates', {}),
+            'ews_forecast_warning_dates': ews_risk_data.get('forecast_warning_dates', {}),
+            'ews_thresholds': ews_risk_data.get('thresholds', {}),
             'time_periods': time_periods,
             'gdp_trajectory': gdp_trajectory,
             'unemployment_trajectory': unemployment_trajectory,
@@ -1223,6 +1532,37 @@ def get_stress_scenarios():
             'trend_consistency': 'Applies severe global crisis shocks while preserving long-term economic trajectory patterns'
         }
     }
+    
+    # Calculate EWS for stressed scenarios (after results is created)
+    stress_ews_data = {}
+    for scenario_name, scenario_data in results['scenarios'].items():
+        try:
+            # Convert stressed data to the same format as historical data
+            stressed_data = []
+            for i, row in enumerate(scenario_data):
+                stressed_data.append({
+                    'observation_date': data[i]['observation_date'],
+                    'GDP': row['GDP'],
+                    'Personal_Consumption_Expenditure': row['Personal_Consumption_Expenditure'],
+                    'Unemployment_Rate': row['Unemployment_Rate']
+                })
+            
+            # Calculate EWS for this stressed scenario
+            stress_ews = calculate_ews_risk_score(stressed_data, None, stress_params)
+            stress_ews_data[scenario_name] = stress_ews
+            
+        except Exception as e:
+            print(f"Error calculating EWS for scenario {scenario_name}: {e}")
+            stress_ews_data[scenario_name] = {
+                'risk_score': 0,
+                'risk_level': 'Unknown',
+                'warnings': {'gdp': 0, 'pce': 0, 'unemployment': 0},
+                'warning_dates': {'GDP_growth': [], 'PCE_growth': [], 'Unemployment_change': []},
+                'thresholds': {}
+            }
+    
+    # Add stress EWS data to results
+    results['stress_ews_data'] = stress_ews_data
     
     return jsonify({
         'success': True,

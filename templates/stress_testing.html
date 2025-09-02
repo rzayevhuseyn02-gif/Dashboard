@@ -73,57 +73,57 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                                                         <div class="col-md-3 mb-3">
-                                 <div class="card h-100">
-                                     <div class="card-body text-center">
-                                         <i class="fas fa-fire fa-2x text-danger mb-3"></i>
-                                         <h6 class="card-title">Recession Scenario</h6>
-                                         <p class="card-text small">Simulate a severe economic downturn with GDP decline, rising unemployment, and falling consumption.</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-fire fa-2x text-danger mb-3"></i>
+                                        <h6 class="card-title">Recession Scenario</h6>
+                                        <p class="card-text small">Simulate a severe economic downturn with GDP decline, rising unemployment, and falling consumption.</p>
                                          <small class="text-muted d-block mb-2">Duration: 18 months</small>
                                          <small class="text-info d-block mb-2">✓ Fixed % Deviation</small>
-                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('recession')">Run Test</button>
-                                     </div>
-                                 </div>
-                             </div>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('recession')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
                             
-                                                         <div class="col-md-3 mb-3">
-                                 <div class="card h-100">
-                                     <div class="card-body text-center">
-                                         <i class="fas fa-chart-line-down fa-2x text-warning mb-3"></i>
-                                         <h6 class="card-title">Market Crash</h6>
-                                         <p class="card-text small">Test against sudden market volatility and rapid economic contraction scenarios.</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-line-down fa-2x text-warning mb-3"></i>
+                                        <h6 class="card-title">Market Crash</h6>
+                                        <p class="card-text small">Test against sudden market volatility and rapid economic contraction scenarios.</p>
                                          <small class="text-muted d-block mb-2">Duration: 24 months</small>
                                          <small class="text-info d-block mb-2">✓ Fixed % Deviation</small>
-                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('market_crash')">Run Test</button>
-                                     </div>
-                                 </div>
-                             </div>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('market_crash')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
                             
-                                                         <div class="col-md-3 mb-3">
-                                 <div class="card h-100">
-                                     <div class="card-body text-center">
-                                         <i class="fas fa-dollar-sign fa-2x text-info mb-3"></i>
-                                         <h6 class="card-title">Inflation Shock</h6>
-                                         <p class="card-text small">Simulate high inflation periods with rapid price increases and monetary policy changes.</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-dollar-sign fa-2x text-info mb-3"></i>
+                                        <h6 class="card-title">Inflation Shock</h6>
+                                        <p class="card-text small">Simulate high inflation periods with rapid price increases and monetary policy changes.</p>
                                          <small class="text-muted d-block mb-2">Duration: 6 months</small>
                                          <small class="text-info d-block mb-2">✓ Fixed % Deviation</small>
-                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('inflation_shock')">Run Test</button>
-                                     </div>
-                                 </div>
-                             </div>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('inflation_shock')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
                             
-                                                         <div class="col-md-3 mb-3">
-                                 <div class="card h-100">
-                                     <div class="card-body text-center">
-                                         <i class="fas fa-globe fa-2x text-success mb-3"></i>
-                                         <h6 class="card-title">Global Crisis</h6>
-                                         <p class="card-text small">Test against international economic shocks and global financial instability.</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-globe fa-2x text-success mb-3"></i>
+                                        <h6 class="card-title">Global Crisis</h6>
+                                        <p class="card-text small">Test against international economic shocks and global financial instability.</p>
                                          <small class="text-muted d-block mb-2">Duration: 36 months (max)</small>
                                          <small class="text-info d-block mb-2">✓ Fixed % Deviation</small>
-                                         <button class="btn btn-primary btn-sm" onclick="runStressTest('global_crisis')">Run Test</button>
-                                     </div>
-                                 </div>
-                             </div>
+                                        <button class="btn btn-primary btn-sm" onclick="runStressTest('global_crisis')">Run Test</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -334,6 +334,167 @@
         </div>
     </div>
 
+        <!-- Risk Metrics Section -->
+        <div class="row mb-4" id="risk-metrics-section" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Risk Metrics & Early Warning System
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Overall Risk Score -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-body text-center">
+                                        <div id="risk-score-display" class="mb-3">
+                                            <div class="display-4 fw-bold" id="risk-score-value">-</div>
+                                            <div class="text-muted" id="risk-score-label">Risk Score</div>
+                                        </div>
+                                        <div id="risk-level-badge" class="badge fs-6 p-2 w-100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warning Signals -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Warning Signals
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="h4 text-danger" id="gdp-warnings">-</div>
+                                                <small class="text-muted">GDP</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h4 text-warning" id="pce-warnings">-</div>
+                                                <small class="text-muted">Consumption</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h4 text-info" id="unemp-warnings">-</div>
+                                                <small class="text-muted">Unemployment</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Threshold Information -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-chart-line me-2"></i>
+                                            Threshold Values
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="small">
+                                            <div class="mb-2">
+                                                <strong>GDP Growth:</strong> <span id="gdp-threshold">-</span>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>PCE Growth:</strong> <span id="pce-threshold">-</span>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Unemployment Change:</strong> <span id="unemp-threshold">-</span>
+                                            </div>
+                                            <div class="text-muted mt-2">
+                                                <small>K = 1.0 (68% CI) | StandardScaler + Z-score Method</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warning Dates Section -->
+                            <div class="col-md-12 mt-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">⚠️ Warning Signal Dates</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <h6>GDP Growth Warnings</h6>
+                                                <div id="gdp-warning-dates" class="text-muted small">-</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h6>PCE Growth Warnings</h6>
+                                                <div id="pce-warning-dates" class="text-muted small">-</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h6>Unemployment Change Warnings</h6>
+                                                <div id="unemp-warning-dates" class="text-muted small">-</div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Risk Analysis Details -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Risk Analysis Methodology
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <ul class="list-unstyled">
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check text-success me-2"></i>
+                                                        <strong>Growth Rate Analysis:</strong> Historical growth patterns
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check text-success me-2"></i>
+                                                        <strong>Threshold Calculation:</strong> Mean + 1.5 × Standard Deviation
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check text-success me-2"></i>
+                                                        <strong>Warning Signals:</strong> Count of threshold violations
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <ul class="list-unstyled">
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check text-success me-2"></i>
+                                                        <strong>Risk Scoring:</strong> 0-10 scale based on warning density
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check text-success me-2"></i>
+                                                        <strong>Risk Levels:</strong> Low, Medium, High, Critical
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check text-success me-2"></i>
+                                                        <strong>Early Warning:</strong> Proactive risk identification
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables
         let currentResults = null;
@@ -455,6 +616,17 @@
             
             // Load comprehensive chart data
             loadComprehensiveChartData(results);
+            
+            // Display Risk Metrics if available
+            if (results.ews_risk_score !== undefined) {
+                const ewsData = {
+                    risk_score: results.ews_risk_score,
+                    risk_level: results.ews_risk_level,
+                    warnings: results.ews_warnings,
+                    thresholds: results.ews_thresholds
+                };
+                displayRiskMetrics(ewsData);
+            }
         }
         
         // Create visualization charts
@@ -549,13 +721,13 @@
             // GDP Comparison Chart (Baseline vs Stressed)
             const gdpData = [
                 {
-                    x: results.time_periods,
-                    y: results.gdp_trajectory,
-                    type: 'scatter',
-                    mode: 'lines+markers',
+                x: results.time_periods,
+                y: results.gdp_trajectory,
+                type: 'scatter',
+                mode: 'lines+markers',
                     name: 'Stressed GDP',
                     line: { color: '#d62728', width: 3 },
-                    marker: { size: 6 }
+                marker: { size: 6 }
                 },
                 {
                     x: results.time_periods,
@@ -588,13 +760,13 @@
             // Unemployment Comparison Chart
             const unemploymentData = [
                 {
-                    x: results.time_periods,
-                    y: results.unemployment_trajectory,
-                    type: 'scatter',
-                    mode: 'lines+markers',
+                x: results.time_periods,
+                y: results.unemployment_trajectory,
+                type: 'scatter',
+                mode: 'lines+markers',
                     name: 'Stressed Unemployment',
-                    line: { color: '#d62728', width: 3 },
-                    marker: { size: 6 }
+                line: { color: '#d62728', width: 3 },
+                marker: { size: 6 }
                 },
                 {
                     x: results.time_periods,
@@ -625,13 +797,13 @@
             // Consumption Comparison Chart
             const consumptionData = [
                 {
-                    x: results.time_periods,
-                    y: results.consumption_trajectory,
-                    type: 'scatter',
-                    mode: 'lines+markers',
+                x: results.time_periods,
+                y: results.consumption_trajectory,
+                type: 'scatter',
+                mode: 'lines+markers',
                     name: 'Stressed Consumption',
                     line: { color: '#d62728', width: 3 },
-                    marker: { size: 6 }
+                marker: { size: 6 }
                 },
                 {
                     x: results.time_periods,
@@ -803,6 +975,71 @@
             if (score < 6) return 'Medium Risk';
             if (score < 8) return 'High Risk';
             return 'Critical Risk';
+        }
+        
+        // Display Risk Metrics
+        function displayRiskMetrics(ewsData) {
+            // Show risk metrics section
+            document.getElementById('risk-metrics-section').style.display = 'block';
+            
+            // Update risk score
+            document.getElementById('risk-score-value').textContent = ewsData.risk_score;
+            
+            // Update risk level badge with appropriate color
+            const riskLevelBadge = document.getElementById('risk-level-badge');
+            riskLevelBadge.textContent = ewsData.risk_level;
+            
+            // Set badge color based on risk level
+            riskLevelBadge.className = 'badge fs-6 p-2 w-100 ';
+            if (ewsData.risk_level === 'Low') {
+                riskLevelBadge.classList.add('bg-success');
+            } else if (ewsData.risk_level === 'Medium') {
+                riskLevelBadge.classList.add('bg-warning');
+            } else if (ewsData.risk_level === 'High') {
+                riskLevelBadge.classList.add('bg-danger');
+            } else if (ewsData.risk_level === 'Critical') {
+                riskLevelBadge.classList.add('bg-dark');
+            }
+            
+            // Update warning signals
+            if (ewsData.warnings) {
+                document.getElementById('gdp-warnings').textContent = ewsData.warnings.gdp || 0;
+                document.getElementById('pce-warnings').textContent = ewsData.warnings.pce || 0;
+                document.getElementById('unemp-warnings').textContent = ewsData.warnings.unemployment || 0;
+            }
+            
+            // Update warning dates
+            if (ewsData.warning_dates) {
+                document.getElementById('gdp-warning-dates').textContent = 
+                    ewsData.warning_dates.GDP_growth && ewsData.warning_dates.GDP_growth.length > 0 
+                        ? ewsData.warning_dates.GDP_growth.join(', ') 
+                        : 'No warnings';
+                        
+                document.getElementById('pce-warning-dates').textContent = 
+                    ewsData.warning_dates.PCE_growth && ewsData.warning_dates.PCE_growth.length > 0 
+                        ? ewsData.warning_dates.PCE_growth.join(', ') 
+                        : 'No warnings';
+                        
+                document.getElementById('unemp-warning-dates').textContent = 
+                    ewsData.warning_dates.Unemployment_change && ewsData.warning_dates.Unemployment_change.length > 0 
+                        ? ewsData.warning_dates.Unemployment_change.join(', ') 
+                        : 'No warnings';
+            }
+            
+            // Update threshold values (new z-score format)
+            if (ewsData.thresholds) {
+                if (ewsData.thresholds.gdp_growth_neg !== undefined) {
+                    // New format: z-score based thresholds
+                    document.getElementById('gdp-threshold').textContent = (ewsData.thresholds.gdp_growth_neg * 100).toFixed(2) + '%';
+                    document.getElementById('pce-threshold').textContent = (ewsData.thresholds.pce_growth_neg * 100).toFixed(2) + '%';
+                    document.getElementById('unemp-threshold').textContent = (ewsData.thresholds.unemployment_change_pos * 100).toFixed(2) + '%';
+                } else {
+                    // Fallback to old format
+                    document.getElementById('gdp-threshold').textContent = (ewsData.thresholds.gdp * 100).toFixed(2) + '%';
+                    document.getElementById('pce-threshold').textContent = (ewsData.thresholds.pce * 100).toFixed(2) + '%';
+                    document.getElementById('unemp-threshold').textContent = (ewsData.thresholds.unemployment * 100).toFixed(2) + '%';
+                }
+            }
         }
         
         // Show/hide loading state
