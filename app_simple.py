@@ -251,6 +251,102 @@ def calculate_var_risk_metrics(stressed_forecast, baseline_forecast):
         print(f"Error calculating risk metrics: {e}")
         return None
 
+def calculate_stress_scenario_warnings(historical_data, baseline_forecast, stress_params):
+    """Calculate warning signals for stress scenarios"""
+    try:
+        import pandas as pd
+        import numpy as np
+        from sklearn.preprocessing import StandardScaler
+        
+        # Convert to DataFrame if it's a list
+        if isinstance(historical_data, list):
+            df = pd.DataFrame(historical_data)
+        else:
+            df = historical_data.copy()
+        
+        # Ensure we have the right columns
+        required_columns = ['GDP', 'Personal_Consumption_Expenditure', 'Unemployment_Rate']
+        for col in required_columns:
+            if col not in df.columns:
+                return {'warnings': {}, 'warning_dates': {}}
+        
+        # Convert to numeric and handle any non-numeric values
+        for col in required_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # Remove any rows with NaN values
+        df_clean = df.dropna(subset=required_columns)
+        
+        if len(df_clean) < 24:
+            return {'warnings': {}, 'warning_dates': {}}
+        
+        # Calculate indicators from levels
+        def calculate_indicators(levels_df):
+            indicators = pd.DataFrame(index=levels_df.index)
+            indicators['GDP_growth'] = levels_df['GDP'].pct_change()
+            indicators['PCE_growth'] = levels_df['Personal_Consumption_Expenditure'].pct_change()
+            indicators['Unemployment_change'] = levels_df['Unemployment_Rate'].diff()
+            return indicators.dropna()
+        
+        # Calculate indicators for historical data
+        hist_indicators = calculate_indicators(df_clean)
+        
+        # Fit StandardScaler on historical data
+        scaler = StandardScaler()
+        z_hist = scaler.fit_transform(hist_indicators[['GDP_growth', 'PCE_growth', 'Unemployment_change']])
+        z_hist_df = pd.DataFrame(z_hist, index=hist_indicators.index, 
+                                columns=['GDP_growth', 'PCE_growth', 'Unemployment_change'])
+        
+        # Calculate thresholds in z-space
+        K = 1.0
+        thr_std = {}
+        for col in ['GDP_growth', 'PCE_growth', 'Unemployment_change']:
+            thr_std[col] = np.mean(z_hist_df[col]) + K * np.std(z_hist_df[col])
+        
+        # Create stress scenario data
+        if baseline_forecast is not None:
+            # Apply stress shocks to baseline forecast
+            stress_forecast = baseline_forecast.copy()
+            stress_forecast['GDP'] = stress_forecast['GDP'] * (1 + stress_params.get('gdp_shock', 0))
+            stress_forecast['Personal_Consumption_Expenditure'] = stress_forecast['Personal_Consumption_Expenditure'] * (1 + stress_params.get('pce_shock', 0))
+            stress_forecast['Unemployment_Rate'] = stress_forecast['Unemployment_Rate'] + stress_params.get('unemployment_shock', 0)
+            
+            # Calculate indicators for stress scenario
+            stress_indicators = calculate_indicators(stress_forecast)
+            
+            # Apply same scaler and thresholds to stress data
+            z_stress = scaler.transform(stress_indicators[['GDP_growth', 'PCE_growth', 'Unemployment_change']])
+            z_stress_df = pd.DataFrame(z_stress, index=stress_indicators.index, 
+                                     columns=['GDP_growth', 'PCE_growth', 'Unemployment_change'])
+            
+            # Calculate warning signals for stress scenario
+            gdp_warning = (z_stress_df['GDP_growth'] < -thr_std['GDP_growth'])
+            pce_warning = (z_stress_df['PCE_growth'] < -thr_std['PCE_growth'])
+            unemp_warning = (z_stress_df['Unemployment_change'] > thr_std['Unemployment_change'])
+            
+            # Count warnings
+            warnings = {
+                'gdp': int(gdp_warning.sum()),
+                'pce': int(pce_warning.sum()),
+                'unemployment': int(unemp_warning.sum())
+            }
+            
+            # Get warning dates
+            warning_dates = {}
+            for indicator, warning_series in [('GDP_growth', gdp_warning), 
+                                            ('PCE_growth', pce_warning), 
+                                            ('Unemployment_change', unemp_warning)]:
+                warning_indices = warning_series[warning_series].index
+                warning_dates[indicator] = [idx.strftime('%Y-%m-%d') for idx in warning_indices]
+            
+            return {'warnings': warnings, 'warning_dates': warning_dates}
+        else:
+            return {'warnings': {}, 'warning_dates': {}}
+            
+    except Exception as e:
+        print(f"Error calculating stress scenario warnings: {e}")
+        return {'warnings': {}, 'warning_dates': {}}
+
 def calculate_ews_risk_score(historical_data, baseline_forecast, stress_scenario):
     """Calculate EWS Risk Score using proper z-score methodology with StandardScaler"""
     try:
@@ -1423,11 +1519,20 @@ def run_stress_test():
                 # Generate baseline forecast
                 baseline_forecast = generate_var_forecast(var_model, var_data, steps=12)
                 ews_risk_data = calculate_ews_risk_score(data, baseline_forecast, stress_params)
+                
+                # Calculate stress scenario warning signals
+                stress_ews_data = calculate_stress_scenario_warnings(data, baseline_forecast, stress_params)
+                ews_risk_data['stress_warnings'] = stress_ews_data.get('warnings', {})
+                ews_risk_data['stress_warning_dates'] = stress_ews_data.get('warning_dates', {})
             else:
                 ews_risk_data = calculate_ews_risk_score(data, None, stress_params)
+                ews_risk_data['stress_warnings'] = {}
+                ews_risk_data['stress_warning_dates'] = {}
         except Exception as e:
             print(f"Error in VAR forecasting for EWS: {e}")
             ews_risk_data = calculate_ews_risk_score(data, None, stress_params)
+            ews_risk_data['stress_warnings'] = {}
+            ews_risk_data['stress_warning_dates'] = {}
         
         # Calculate final impacts
         gdp_impact = gdp_trajectory[0] if gdp_trajectory else 0
@@ -1449,6 +1554,8 @@ def run_stress_test():
             'ews_forecast_warnings': ews_risk_data.get('forecast_warnings', {}),
             'ews_warning_dates': ews_risk_data.get('warning_dates', {}),
             'ews_forecast_warning_dates': ews_risk_data.get('forecast_warning_dates', {}),
+            'ews_stress_warnings': ews_risk_data.get('stress_warnings', {}),
+            'ews_stress_warning_dates': ews_risk_data.get('stress_warning_dates', {}),
             'ews_thresholds': ews_risk_data.get('thresholds', {}),
             'time_periods': time_periods,
             'gdp_trajectory': gdp_trajectory,

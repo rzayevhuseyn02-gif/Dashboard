@@ -369,18 +369,60 @@
                                         </h6>
                                     </div>
                                     <div class="card-body">
-                                        <div class="row text-center">
-                                            <div class="col-4">
-                                                <div class="h4 text-danger" id="gdp-warnings">-</div>
-                                                <small class="text-muted">GDP</small>
+                                        <!-- Historical Warnings -->
+                                        <div class="mb-3">
+                                            <h6 class="text-primary mb-2">📊 Historical Data</h6>
+                                            <div class="row text-center">
+                                                <div class="col-4">
+                                                    <div class="h5 text-danger" id="gdp-warnings-hist">-</div>
+                                                    <small class="text-muted">GDP</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="h5 text-warning" id="pce-warnings-hist">-</div>
+                                                    <small class="text-muted">Consumption</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="h5 text-info" id="unemp-warnings-hist">-</div>
+                                                    <small class="text-muted">Unemployment</small>
+                                                </div>
                                             </div>
-                                            <div class="col-4">
-                                                <div class="h4 text-warning" id="pce-warnings">-</div>
-                                                <small class="text-muted">Consumption</small>
+                                        </div>
+                                        
+                                        <!-- VAR Baseline Forecast Warnings -->
+                                        <div class="mb-3">
+                                            <h6 class="text-success mb-2">🔮 VAR Baseline Forecast</h6>
+                                            <div class="row text-center">
+                                                <div class="col-4">
+                                                    <div class="h5 text-danger" id="gdp-warnings-forecast">-</div>
+                                                    <small class="text-muted">GDP</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="h5 text-warning" id="pce-warnings-forecast">-</div>
+                                                    <small class="text-muted">Consumption</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="h5 text-info" id="unemp-warnings-forecast">-</div>
+                                                    <small class="text-muted">Unemployment</small>
+                                                </div>
                                             </div>
-                                            <div class="col-4">
-                                                <div class="h4 text-info" id="unemp-warnings">-</div>
-                                                <small class="text-muted">Unemployment</small>
+                                        </div>
+                                        
+                                        <!-- Stress Scenario Warnings -->
+                                        <div>
+                                            <h6 class="text-danger mb-2">⚡ Stress Scenario</h6>
+                                            <div class="row text-center">
+                                                <div class="col-4">
+                                                    <div class="h5 text-danger" id="gdp-warnings-stress">-</div>
+                                                    <small class="text-muted">GDP</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="h5 text-warning" id="pce-warnings-stress">-</div>
+                                                    <small class="text-muted">Consumption</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="h5 text-info" id="unemp-warnings-stress">-</div>
+                                                    <small class="text-muted">Unemployment</small>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -422,20 +464,61 @@
                                         <h6 class="mb-0">⚠️ Warning Signal Dates</h6>
                                     </div>
                                     <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <h6>GDP Growth Warnings</h6>
-                                                <div id="gdp-warning-dates" class="text-muted small">-</div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <h6>PCE Growth Warnings</h6>
-                                                <div id="pce-warning-dates" class="text-muted small">-</div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <h6>Unemployment Change Warnings</h6>
-                                                <div id="unemp-warning-dates" class="text-muted small">-</div>
+                                        <!-- Historical Warning Dates -->
+                                        <div class="mb-4">
+                                            <h6 class="text-primary mb-3">📊 Historical Data Warning Dates</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6>GDP Growth Warnings</h6>
+                                                    <div id="gdp-warning-dates-hist" class="text-muted small">-</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>PCE Growth Warnings</h6>
+                                                    <div id="pce-warning-dates-hist" class="text-muted small">-</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>Unemployment Change Warnings</h6>
+                                                    <div id="unemp-warning-dates-hist" class="text-muted small">-</div>
+                                                </div>
                                             </div>
                                         </div>
+                                        
+                                        <!-- VAR Baseline Forecast Warning Dates -->
+                                        <div class="mb-4">
+                                            <h6 class="text-success mb-3">🔮 VAR Baseline Forecast Warning Dates</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6>GDP Growth Warnings</h6>
+                                                    <div id="gdp-warning-dates-forecast" class="text-muted small">-</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>PCE Growth Warnings</h6>
+                                                    <div id="pce-warning-dates-forecast" class="text-muted small">-</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>Unemployment Change Warnings</h6>
+                                                    <div id="unemp-warning-dates-forecast" class="text-muted small">-</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Stress Scenario Warning Dates -->
+                                        <div>
+                                            <h6 class="text-danger mb-3">⚡ Stress Scenario Warning Dates</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6>GDP Growth Warnings</h6>
+                                                    <div id="gdp-warning-dates-stress" class="text-muted small">-</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>PCE Growth Warnings</h6>
+                                                    <div id="pce-warning-dates-stress" class="text-muted small">-</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>Unemployment Change Warnings</h6>
+                                                    <div id="unemp-warning-dates-stress" class="text-muted small">-</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -623,6 +706,11 @@
                     risk_score: results.ews_risk_score,
                     risk_level: results.ews_risk_level,
                     warnings: results.ews_warnings,
+                    forecast_warnings: results.ews_forecast_warnings,
+                    stress_warnings: results.ews_stress_warnings,
+                    warning_dates: results.ews_warning_dates,
+                    forecast_warning_dates: results.ews_forecast_warning_dates,
+                    stress_warning_dates: results.ews_stress_warning_dates,
                     thresholds: results.ews_thresholds
                 };
                 displayRiskMetrics(ewsData);
@@ -1001,28 +1089,78 @@
                 riskLevelBadge.classList.add('bg-dark');
             }
             
-            // Update warning signals
+            // Update historical warning signals
             if (ewsData.warnings) {
-                document.getElementById('gdp-warnings').textContent = ewsData.warnings.gdp || 0;
-                document.getElementById('pce-warnings').textContent = ewsData.warnings.pce || 0;
-                document.getElementById('unemp-warnings').textContent = ewsData.warnings.unemployment || 0;
+                document.getElementById('gdp-warnings-hist').textContent = ewsData.warnings.gdp || 0;
+                document.getElementById('pce-warnings-hist').textContent = ewsData.warnings.pce || 0;
+                document.getElementById('unemp-warnings-hist').textContent = ewsData.warnings.unemployment || 0;
             }
             
-            // Update warning dates
+            // Update VAR baseline forecast warning signals
+            if (ewsData.forecast_warnings) {
+                document.getElementById('gdp-warnings-forecast').textContent = ewsData.forecast_warnings.gdp || 0;
+                document.getElementById('pce-warnings-forecast').textContent = ewsData.forecast_warnings.pce || 0;
+                document.getElementById('unemp-warnings-forecast').textContent = ewsData.forecast_warnings.unemployment || 0;
+            }
+            
+            // Update stress scenario warning signals
+            if (ewsData.stress_warnings) {
+                document.getElementById('gdp-warnings-stress').textContent = ewsData.stress_warnings.gdp || 0;
+                document.getElementById('pce-warnings-stress').textContent = ewsData.stress_warnings.pce || 0;
+                document.getElementById('unemp-warnings-stress').textContent = ewsData.stress_warnings.unemployment || 0;
+            }
+            
+            // Update historical warning dates
             if (ewsData.warning_dates) {
-                document.getElementById('gdp-warning-dates').textContent = 
+                document.getElementById('gdp-warning-dates-hist').textContent = 
                     ewsData.warning_dates.GDP_growth && ewsData.warning_dates.GDP_growth.length > 0 
                         ? ewsData.warning_dates.GDP_growth.join(', ') 
                         : 'No warnings';
                         
-                document.getElementById('pce-warning-dates').textContent = 
+                document.getElementById('pce-warning-dates-hist').textContent = 
                     ewsData.warning_dates.PCE_growth && ewsData.warning_dates.PCE_growth.length > 0 
                         ? ewsData.warning_dates.PCE_growth.join(', ') 
                         : 'No warnings';
                         
-                document.getElementById('unemp-warning-dates').textContent = 
+                document.getElementById('unemp-warning-dates-hist').textContent = 
                     ewsData.warning_dates.Unemployment_change && ewsData.warning_dates.Unemployment_change.length > 0 
                         ? ewsData.warning_dates.Unemployment_change.join(', ') 
+                        : 'No warnings';
+            }
+            
+            // Update VAR baseline forecast warning dates
+            if (ewsData.forecast_warning_dates) {
+                document.getElementById('gdp-warning-dates-forecast').textContent = 
+                    ewsData.forecast_warning_dates.GDP_growth && ewsData.forecast_warning_dates.GDP_growth.length > 0 
+                        ? ewsData.forecast_warning_dates.GDP_growth.join(', ') 
+                        : 'No warnings';
+                        
+                document.getElementById('pce-warning-dates-forecast').textContent = 
+                    ewsData.forecast_warning_dates.PCE_growth && ewsData.forecast_warning_dates.PCE_growth.length > 0 
+                        ? ewsData.forecast_warning_dates.PCE_growth.join(', ') 
+                        : 'No warnings';
+                        
+                document.getElementById('unemp-warning-dates-forecast').textContent = 
+                    ewsData.forecast_warning_dates.Unemployment_change && ewsData.forecast_warning_dates.Unemployment_change.length > 0 
+                        ? ewsData.forecast_warning_dates.Unemployment_change.join(', ') 
+                        : 'No warnings';
+            }
+            
+            // Update stress scenario warning dates
+            if (ewsData.stress_warning_dates) {
+                document.getElementById('gdp-warning-dates-stress').textContent = 
+                    ewsData.stress_warning_dates.GDP_growth && ewsData.stress_warning_dates.GDP_growth.length > 0 
+                        ? ewsData.stress_warning_dates.GDP_growth.join(', ') 
+                        : 'No warnings';
+                        
+                document.getElementById('pce-warning-dates-stress').textContent = 
+                    ewsData.stress_warning_dates.PCE_growth && ewsData.stress_warning_dates.PCE_growth.length > 0 
+                        ? ewsData.stress_warning_dates.PCE_growth.join(', ') 
+                        : 'No warnings';
+                        
+                document.getElementById('unemp-warning-dates-stress').textContent = 
+                    ewsData.stress_warning_dates.Unemployment_change && ewsData.stress_warning_dates.Unemployment_change.length > 0 
+                        ? ewsData.stress_warning_dates.Unemployment_change.join(', ') 
                         : 'No warnings';
             }
             
