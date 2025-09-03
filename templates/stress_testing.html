@@ -144,15 +144,15 @@
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="gdp-shock" class="form-label">GDP Shock (%)</label>
-                                <input type="number" class="form-control" id="gdp-shock" value="-5" step="0.1" min="-50" max="50">
+                                <input type="number" class="form-control" id="gdp-shock" value="-10" step="0.1" min="-50" max="50">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="unemployment-shock" class="form-label">Unemployment Shock (%)</label>
-                                <input type="number" class="form-control" id="unemployment-shock" value="2" step="0.1" min="-10" max="20">
+                                <input type="number" class="form-control" id="unemployment-shock" value="5" step="0.1" min="-10" max="20">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="pce-shock" class="form-label">Consumption Shock (%)</label>
-                                <input type="number" class="form-control" id="pce-shock" value="-3" step="0.1" min="-30" max="30">
+                                <input type="number" class="form-control" id="pce-shock" value="-8" step="0.1" min="-30" max="30">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="duration" class="form-label">Duration (months)</label>
@@ -333,6 +333,331 @@
             </div>
         </div>
     </div>
+
+        <!-- EWS System Analysis Section -->
+        <div class="row mb-4" id="ews-system-section" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            EWS (Early Warning System) Analysis
+                        </h5>
+                        <p class="mb-0 mt-2 opacity-75">Notebook-based EWS implementation with multiple stress scenarios</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Methodology Overview -->
+                            <div class="col-md-12 mb-4">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>EWS Methodology</h6>
+                                    <ul class="mb-0">
+                                        <li><strong>Indicators:</strong> GDP growth, PCE growth, Unemployment change</li>
+                                        <li><strong>Standardization:</strong> StandardScaler normalization (mean=0, std=1)</li>
+                                        <li><strong>Thresholds:</strong> Mean + 1.5 × Standard Deviation (K=1.5)</li>
+                                        <li><strong>Warning Signals:</strong> GDP/PCE below threshold, Unemployment above threshold</li>
+                                        <li><strong>EWS Score:</strong> Sum of warning signals (0-3 scale)</li>
+                                        <li><strong>Scenarios:</strong> Mild, Moderate, Severe, and Custom stress scenarios</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Historical Analysis -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">📊 Historical EWS Analysis</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <div class="h4 text-primary" id="ews-hist-total-warnings">-</div>
+                                            <small class="text-muted">Total Warning Signals</small>
+                                        </div>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="h6 text-danger" id="ews-hist-gdp-warnings">-</div>
+                                                <small class="text-muted">GDP</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-warning" id="ews-hist-pce-warnings">-</div>
+                                                <small class="text-muted">Consumption</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-info" id="ews-hist-unemp-warnings">-</div>
+                                                <small class="text-muted">Unemployment</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Scenario Analysis -->
+                            <div class="col-md-8 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">🎯 Scenario Analysis</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row" id="ews-scenario-cards">
+                                            <!-- Scenario cards will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Threshold Information -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">📏 EWS Thresholds (Raw Units)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="small">
+                                            <div class="mb-2">
+                                                <strong>GDP Growth:</strong> <span id="ews-gdp-threshold">-</span>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>PCE Growth:</strong> <span id="ews-pce-threshold">-</span>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Unemployment Change:</strong> <span id="ews-unemp-threshold">-</span>
+                                            </div>
+                                            <div class="text-muted mt-2">
+                                                <small>K = 1.5 | StandardScaler + Z-score Method</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- EWS Score Chart -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0">📈 EWS Score Over Time</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="ews-score-chart" style="height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warning Dates Details -->
+                            <div class="col-md-12 mt-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">📅 Warning Signal Dates by Scenario</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row" id="ews-warning-dates">
+                                            <!-- Warning dates will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Macro Indicators Analysis Section -->
+        <div class="row mb-4" id="macro-indicators-section" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Macro Indicators Analysis
+                        </h5>
+                        <p class="mb-0 mt-2 opacity-75">Advanced stress testing using standardized macro indicators with 1.5×Std Dev thresholds</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Methodology Overview -->
+                            <div class="col-md-12 mb-4">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Methodology</h6>
+                                    <ul class="mb-0">
+                                        <li><strong>Data Preparation:</strong> Calculate percentage growth for GDP/consumption, differences for unemployment</li>
+                                        <li><strong>Standardization:</strong> StandardScaler normalization (mean=0, std=1) for direct comparability</li>
+                                        <li><strong>Thresholds:</strong> Mean + 1.5 × Standard Deviation for each indicator</li>
+                                        <li><strong>Warning Signals:</strong> 1 for GDP/consumption below threshold, 1 for unemployment above threshold</li>
+                                        <li><strong>Scenarios:</strong> Applied to historical data, forecasted values, and stress-test scenarios</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Analysis Results -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">📊 Historical Data Analysis</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <div class="h4 text-primary" id="hist-total-warnings">-</div>
+                                            <small class="text-muted">Total Warning Signals</small>
+                                        </div>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="h6 text-danger" id="hist-gdp-warnings">-</div>
+                                                <small class="text-muted">GDP</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-warning" id="hist-pce-warnings">-</div>
+                                                <small class="text-muted">Consumption</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-info" id="hist-unemp-warnings">-</div>
+                                                <small class="text-muted">Unemployment</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">🔮 VAR Forecast Analysis</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <div class="h4 text-success" id="forecast-total-warnings">-</div>
+                                            <small class="text-muted">Total Warning Signals</small>
+                                        </div>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="h6 text-danger" id="forecast-gdp-warnings">-</div>
+                                                <small class="text-muted">GDP</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-warning" id="forecast-pce-warnings">-</div>
+                                                <small class="text-muted">Consumption</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-info" id="forecast-unemp-warnings">-</div>
+                                                <small class="text-muted">Unemployment</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="card-header bg-danger text-white">
+                                        <h6 class="mb-0">⚡ Stress Scenario Analysis</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <div class="h4 text-danger" id="stress-total-warnings">-</div>
+                                            <small class="text-muted">Total Warning Signals</small>
+                                        </div>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="h6 text-danger" id="stress-gdp-warnings">-</div>
+                                                <small class="text-muted">GDP</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-warning" id="stress-pce-warnings">-</div>
+                                                <small class="text-muted">Consumption</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="h6 text-info" id="stress-unemp-warnings">-</div>
+                                                <small class="text-muted">Unemployment</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Threshold Information -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">📏 Threshold Values (Raw Units)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="small">
+                                            <div class="mb-2">
+                                                <strong>GDP Growth:</strong> <span id="macro-gdp-threshold">-</span>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>PCE Growth:</strong> <span id="macro-pce-threshold">-</span>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Unemployment Change:</strong> <span id="macro-unemp-threshold">-</span>
+                                            </div>
+                                            <div class="text-muted mt-2">
+                                                <small>K = 1.5 | StandardScaler + Z-score Method</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Overall Risk Assessment -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0">⚠️ Overall Risk Assessment</h6>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <div class="mb-3">
+                                            <div class="display-4 fw-bold" id="macro-risk-score">-</div>
+                                            <div class="text-muted">Risk Score</div>
+                                        </div>
+                                        <div id="macro-risk-level-badge" class="badge fs-6 p-2 w-100"></div>
+                                        <div class="mt-2">
+                                            <small class="text-muted" id="macro-observations">-</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warning Dates Details -->
+                            <div class="col-md-12 mt-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">📅 Warning Signal Dates by Scenario</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <h6 class="text-primary">📊 Historical Data</h6>
+                                                <div class="small">
+                                                    <div class="mb-1"><strong>GDP:</strong> <span id="macro-hist-gdp-dates">-</span></div>
+                                                    <div class="mb-1"><strong>PCE:</strong> <span id="macro-hist-pce-dates">-</span></div>
+                                                    <div class="mb-1"><strong>Unemployment:</strong> <span id="macro-hist-unemp-dates">-</span></div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h6 class="text-success">🔮 VAR Forecast</h6>
+                                                <div class="small">
+                                                    <div class="mb-1"><strong>GDP:</strong> <span id="macro-forecast-gdp-dates">-</span></div>
+                                                    <div class="mb-1"><strong>PCE:</strong> <span id="macro-forecast-pce-dates">-</span></div>
+                                                    <div class="mb-1"><strong>Unemployment:</strong> <span id="macro-forecast-unemp-dates">-</span></div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h6 class="text-danger">⚡ Stress Scenario</h6>
+                                                <div class="small">
+                                                    <div class="mb-1"><strong>GDP:</strong> <span id="macro-stress-gdp-dates">-</span></div>
+                                                    <div class="mb-1"><strong>PCE:</strong> <span id="macro-stress-pce-dates">-</span></div>
+                                                    <div class="mb-1"><strong>Unemployment:</strong> <span id="macro-stress-unemp-dates">-</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Risk Metrics Section -->
         <div class="row mb-4" id="risk-metrics-section" style="display: none;">
@@ -700,6 +1025,12 @@
             // Load comprehensive chart data
             loadComprehensiveChartData(results);
             
+            // Load macro indicators analysis
+            loadMacroIndicatorsAnalysis(results);
+            
+            // Load EWS system analysis
+            loadEWSSystemAnalysis(results);
+            
             // Display Risk Metrics if available
             if (results.ews_risk_score !== undefined) {
                 const ewsData = {
@@ -1063,6 +1394,363 @@
             if (score < 6) return 'Medium Risk';
             if (score < 8) return 'High Risk';
             return 'Critical Risk';
+        }
+        
+        // Load macro indicators analysis
+        function loadMacroIndicatorsAnalysis(results) {
+            // Check if stress_parameters exists
+            if (!results.stress_parameters) {
+                console.log("No stress_parameters found, skipping macro indicators analysis");
+                return;
+            }
+            
+            const params = {
+                gdp: results.stress_parameters.gdp_shock,
+                unemployment: results.stress_parameters.unemployment_shock,
+                pce: results.stress_parameters.pce_shock,
+                duration: results.stress_parameters.duration
+            };
+            
+            fetch('/api/stress-testing/macro-indicators', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayMacroIndicatorsAnalysis(data);
+                } else {
+                    console.error('Error loading macro indicators analysis:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Load EWS system analysis
+        function loadEWSSystemAnalysis(results) {
+            // Check if stress_parameters exists
+            if (!results.stress_parameters) {
+                console.log("No stress_parameters found, skipping EWS system analysis");
+                return;
+            }
+            
+            const params = {
+                gdp: results.stress_parameters.gdp_shock,
+                unemployment: results.stress_parameters.unemployment_shock,
+                pce: results.stress_parameters.pce_shock,
+                duration: results.stress_parameters.duration
+            };
+            
+            fetch('/api/stress-testing/ews-system', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayEWSSystemAnalysis(data);
+                } else {
+                    console.error('Error loading EWS system analysis:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Display EWS system analysis
+        function displayEWSSystemAnalysis(ewsData) {
+            // Show EWS system section
+            document.getElementById('ews-system-section').style.display = 'block';
+            
+            // Update historical analysis
+            if (ewsData.historical_analysis) {
+                document.getElementById('ews-hist-total-warnings').textContent = ewsData.historical_analysis.total_warnings;
+                document.getElementById('ews-hist-gdp-warnings').textContent = ewsData.historical_analysis.gdp_warnings;
+                document.getElementById('ews-hist-pce-warnings').textContent = ewsData.historical_analysis.pce_warnings;
+                document.getElementById('ews-hist-unemp-warnings').textContent = ewsData.historical_analysis.unemployment_warnings;
+            }
+            
+            // Update threshold values
+            if (ewsData.thresholds && ewsData.thresholds.raw_units_negative) {
+                document.getElementById('ews-gdp-threshold').textContent = (ewsData.thresholds.raw_units_negative.GDP_growth * 100).toFixed(2) + '%';
+                document.getElementById('ews-pce-threshold').textContent = (ewsData.thresholds.raw_units_negative.PCE_growth * 100).toFixed(2) + '%';
+                document.getElementById('ews-unemp-threshold').textContent = (ewsData.thresholds.raw_units_positive.Unemployment_change * 100).toFixed(2) + '%';
+            }
+            
+            // Create scenario cards
+            const scenarioCardsContainer = document.getElementById('ews-scenario-cards');
+            scenarioCardsContainer.innerHTML = '';
+            
+            if (ewsData.scenario_analysis) {
+                Object.entries(ewsData.scenario_analysis).forEach(([scenarioName, analysis]) => {
+                    const cardHtml = `
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header ${getScenarioColor(scenarioName)} text-white">
+                                    <h6 class="mb-0">${scenarioName}</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <div class="h4 ${getScenarioTextColor(scenarioName)}">${analysis.total_warnings}</div>
+                                        <small class="text-muted">Total Warnings</small>
+                                    </div>
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="h6 text-danger">${analysis.gdp_warnings}</div>
+                                            <small class="text-muted">GDP</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="h6 text-warning">${analysis.pce_warnings}</div>
+                                            <small class="text-muted">PCE</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="h6 text-info">${analysis.unemployment_warnings}</div>
+                                            <small class="text-muted">Unemp</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">Max EWS: ${analysis.max_ews_score}/3 | Avg: ${analysis.avg_ews_score.toFixed(1)}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    scenarioCardsContainer.innerHTML += cardHtml;
+                });
+            }
+            
+            // Create EWS score chart
+            createEWSScoreChart(ewsData.scenario_analysis);
+            
+            // Create warning dates section
+            createEWSWarningDates(ewsData.scenario_analysis);
+        }
+        
+        // Helper functions for EWS display
+        function getScenarioColor(scenarioName) {
+            switch(scenarioName) {
+                case 'Baseline': return 'bg-secondary';
+                case 'Mild Shock': return 'bg-success';
+                case 'Moderate Shock': return 'bg-warning';
+                case 'Severe Shock': return 'bg-danger';
+                case 'Custom Shock': return 'bg-primary';
+                default: return 'bg-light';
+            }
+        }
+        
+        function getScenarioTextColor(scenarioName) {
+            switch(scenarioName) {
+                case 'Baseline': return 'text-white';
+                case 'Mild Shock': return 'text-white';
+                case 'Moderate Shock': return 'text-dark';
+                case 'Severe Shock': return 'text-white';
+                case 'Custom Shock': return 'text-white';
+                default: return 'text-dark';
+            }
+        }
+        
+        // Create EWS score chart
+        function createEWSScoreChart(scenarioAnalysis) {
+            if (!scenarioAnalysis) return;
+            
+            const traces = [];
+            const colors = {
+                'Baseline': '#6c757d',
+                'Mild Shock': '#28a745',
+                'Moderate Shock': '#ffc107',
+                'Severe Shock': '#dc3545',
+                'Custom Shock': '#007bff'
+            };
+            
+            Object.entries(scenarioAnalysis).forEach(([scenarioName, analysis]) => {
+                if (analysis.dates && analysis.ews_scores) {
+                    traces.push({
+                        x: analysis.dates,
+                        y: analysis.ews_scores,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: scenarioName,
+                        line: { color: colors[scenarioName] || '#000000', width: 2 },
+                        marker: { size: 6 }
+                    });
+                }
+            });
+            
+            const layout = {
+                title: 'EWS Score Over Time',
+                xaxis: { title: 'Date' },
+                yaxis: { title: 'EWS Score (0-3)', range: [0, 3.5] },
+                height: 200,
+                margin: { t: 30, b: 30, l: 40, r: 20 }
+            };
+            
+            Plotly.newPlot('ews-score-chart', traces, layout, {responsive: true});
+        }
+        
+        // Create warning dates section
+        function createEWSWarningDates(scenarioAnalysis) {
+            const warningDatesContainer = document.getElementById('ews-warning-dates');
+            warningDatesContainer.innerHTML = '';
+            
+            if (!scenarioAnalysis) return;
+            
+            Object.entries(scenarioAnalysis).forEach(([scenarioName, analysis]) => {
+                const colHtml = `
+                    <div class="col-md-3 mb-3">
+                        <div class="card">
+                            <div class="card-header ${getScenarioColor(scenarioName)} text-white">
+                                <h6 class="mb-0">${scenarioName}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="small">
+                                    <div class="mb-1"><strong>GDP:</strong> <span class="text-danger">${analysis.warning_dates.GDP_growth.length > 0 ? analysis.warning_dates.GDP_growth.join(', ') : 'No warnings'}</span></div>
+                                    <div class="mb-1"><strong>PCE:</strong> <span class="text-warning">${analysis.warning_dates.PCE_growth.length > 0 ? analysis.warning_dates.PCE_growth.join(', ') : 'No warnings'}</span></div>
+                                    <div class="mb-1"><strong>Unemployment:</strong> <span class="text-info">${analysis.warning_dates.Unemployment_change.length > 0 ? analysis.warning_dates.Unemployment_change.join(', ') : 'No warnings'}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                warningDatesContainer.innerHTML += colHtml;
+            });
+        }
+        
+        // Display macro indicators analysis
+        function displayMacroIndicatorsAnalysis(macroData) {
+            // Show macro indicators section
+            document.getElementById('macro-indicators-section').style.display = 'block';
+            
+            // Update historical analysis
+            if (macroData.historical_analysis) {
+                document.getElementById('hist-total-warnings').textContent = macroData.historical_analysis.total_warnings;
+                document.getElementById('hist-gdp-warnings').textContent = macroData.historical_analysis.gdp_warnings;
+                document.getElementById('hist-pce-warnings').textContent = macroData.historical_analysis.pce_warnings;
+                document.getElementById('hist-unemp-warnings').textContent = macroData.historical_analysis.unemployment_warnings;
+                
+                // Update historical warning dates
+                if (macroData.historical_analysis.warning_dates) {
+                    document.getElementById('macro-hist-gdp-dates').textContent = 
+                        macroData.historical_analysis.warning_dates.GDP_growth && macroData.historical_analysis.warning_dates.GDP_growth.length > 0 
+                            ? macroData.historical_analysis.warning_dates.GDP_growth.join(', ') 
+                            : 'No warnings';
+                            
+                    document.getElementById('macro-hist-pce-dates').textContent = 
+                        macroData.historical_analysis.warning_dates.PCE_growth && macroData.historical_analysis.warning_dates.PCE_growth.length > 0 
+                            ? macroData.historical_analysis.warning_dates.PCE_growth.join(', ') 
+                            : 'No warnings';
+                            
+                    document.getElementById('macro-hist-unemp-dates').textContent = 
+                        macroData.historical_analysis.warning_dates.Unemployment_change && macroData.historical_analysis.warning_dates.Unemployment_change.length > 0 
+                            ? macroData.historical_analysis.warning_dates.Unemployment_change.join(', ') 
+                            : 'No warnings';
+                }
+            }
+            
+            // Update forecast analysis
+            if (macroData.forecast_analysis && !macroData.forecast_analysis.error) {
+                document.getElementById('forecast-total-warnings').textContent = macroData.forecast_analysis.total_warnings;
+                document.getElementById('forecast-gdp-warnings').textContent = macroData.forecast_analysis.gdp_warnings;
+                document.getElementById('forecast-pce-warnings').textContent = macroData.forecast_analysis.pce_warnings;
+                document.getElementById('forecast-unemp-warnings').textContent = macroData.forecast_analysis.unemployment_warnings;
+                
+                // Update forecast warning dates
+                if (macroData.forecast_analysis.warning_dates) {
+                    document.getElementById('macro-forecast-gdp-dates').textContent = 
+                        macroData.forecast_analysis.warning_dates.GDP_growth && macroData.forecast_analysis.warning_dates.GDP_growth.length > 0 
+                            ? macroData.forecast_analysis.warning_dates.GDP_growth.join(', ') 
+                            : 'No warnings';
+                            
+                    document.getElementById('macro-forecast-pce-dates').textContent = 
+                        macroData.forecast_analysis.warning_dates.PCE_growth && macroData.forecast_analysis.warning_dates.PCE_growth.length > 0 
+                            ? macroData.forecast_analysis.warning_dates.PCE_growth.join(', ') 
+                            : 'No warnings';
+                            
+                    document.getElementById('macro-forecast-unemp-dates').textContent = 
+                        macroData.forecast_analysis.warning_dates.Unemployment_change && macroData.forecast_analysis.warning_dates.Unemployment_change.length > 0 
+                            ? macroData.forecast_analysis.warning_dates.Unemployment_change.join(', ') 
+                            : 'No warnings';
+                }
+            } else {
+                document.getElementById('forecast-total-warnings').textContent = 'N/A';
+                document.getElementById('forecast-gdp-warnings').textContent = 'N/A';
+                document.getElementById('forecast-pce-warnings').textContent = 'N/A';
+                document.getElementById('forecast-unemp-warnings').textContent = 'N/A';
+                document.getElementById('macro-forecast-gdp-dates').textContent = 'N/A';
+                document.getElementById('macro-forecast-pce-dates').textContent = 'N/A';
+                document.getElementById('macro-forecast-unemp-dates').textContent = 'N/A';
+            }
+            
+            // Update stress analysis
+            if (macroData.stress_analysis && !macroData.stress_analysis.error) {
+                document.getElementById('stress-total-warnings').textContent = macroData.stress_analysis.total_warnings;
+                document.getElementById('stress-gdp-warnings').textContent = macroData.stress_analysis.gdp_warnings;
+                document.getElementById('stress-pce-warnings').textContent = macroData.stress_analysis.pce_warnings;
+                document.getElementById('stress-unemp-warnings').textContent = macroData.stress_analysis.unemployment_warnings;
+                
+                // Update stress warning dates
+                if (macroData.stress_analysis.warning_dates) {
+                    document.getElementById('macro-stress-gdp-dates').textContent = 
+                        macroData.stress_analysis.warning_dates.GDP_growth && macroData.stress_analysis.warning_dates.GDP_growth.length > 0 
+                            ? macroData.stress_analysis.warning_dates.GDP_growth.join(', ') 
+                            : 'No warnings';
+                            
+                    document.getElementById('macro-stress-pce-dates').textContent = 
+                        macroData.stress_analysis.warning_dates.PCE_growth && macroData.stress_analysis.warning_dates.PCE_growth.length > 0 
+                            ? macroData.stress_analysis.warning_dates.PCE_growth.join(', ') 
+                            : 'No warnings';
+                            
+                    document.getElementById('macro-stress-unemp-dates').textContent = 
+                        macroData.stress_analysis.warning_dates.Unemployment_change && macroData.stress_analysis.warning_dates.Unemployment_change.length > 0 
+                            ? macroData.stress_analysis.warning_dates.Unemployment_change.join(', ') 
+                            : 'No warnings';
+                }
+            } else {
+                document.getElementById('stress-total-warnings').textContent = 'N/A';
+                document.getElementById('stress-gdp-warnings').textContent = 'N/A';
+                document.getElementById('stress-pce-warnings').textContent = 'N/A';
+                document.getElementById('stress-unemp-warnings').textContent = 'N/A';
+                document.getElementById('macro-stress-gdp-dates').textContent = 'N/A';
+                document.getElementById('macro-stress-pce-dates').textContent = 'N/A';
+                document.getElementById('macro-stress-unemp-dates').textContent = 'N/A';
+            }
+            
+            // Update threshold values
+            if (macroData.thresholds && macroData.thresholds.raw_units) {
+                document.getElementById('macro-gdp-threshold').textContent = (macroData.thresholds.raw_units.GDP_growth_neg * 100).toFixed(2) + '%';
+                document.getElementById('macro-pce-threshold').textContent = (macroData.thresholds.raw_units.PCE_growth_neg * 100).toFixed(2) + '%';
+                document.getElementById('macro-unemp-threshold').textContent = (macroData.thresholds.raw_units.Unemployment_change_pos * 100).toFixed(2) + '%';
+            }
+            
+            // Update overall risk assessment
+            if (macroData.overall_risk) {
+                document.getElementById('macro-risk-score').textContent = macroData.overall_risk.risk_score;
+                document.getElementById('macro-observations').textContent = `${macroData.overall_risk.total_observations} observations`;
+                
+                // Update risk level badge
+                const riskLevelBadge = document.getElementById('macro-risk-level-badge');
+                riskLevelBadge.textContent = macroData.overall_risk.risk_level;
+                
+                // Set badge color based on risk level
+                riskLevelBadge.className = 'badge fs-6 p-2 w-100 ';
+                if (macroData.overall_risk.risk_level === 'Low') {
+                    riskLevelBadge.classList.add('bg-success');
+                } else if (macroData.overall_risk.risk_level === 'Medium') {
+                    riskLevelBadge.classList.add('bg-warning');
+                } else if (macroData.overall_risk.risk_level === 'High') {
+                    riskLevelBadge.classList.add('bg-danger');
+                } else if (macroData.overall_risk.risk_level === 'Critical') {
+                    riskLevelBadge.classList.add('bg-dark');
+                }
+            }
         }
         
         // Display Risk Metrics
