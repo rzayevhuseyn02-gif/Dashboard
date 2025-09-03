@@ -2244,21 +2244,22 @@ def ews_system_analysis():
             signals = pack["signals"]
             indicators = pack["ind"]
             
-            # Get forecast period data only
-            forecast_signals = signals.loc[signals.index > hist_end]
-            forecast_indicators = indicators.loc[indicators.index > hist_end]
+            # Get full data (historical + forecast) for EWS score chart
+            forecast_signals = signals  # Use full signals data
+            forecast_indicators = indicators  # Use full indicators data
             
-            # Calculate summary statistics
-            total_warnings = forecast_signals["EWS_score"].sum()
-            gdp_warnings = forecast_signals["GDP_warning"].sum()
-            pce_warnings = forecast_signals["PCE_warning"].sum()
-            unemp_warnings = forecast_signals["Unemp_warning"].sum()
+            # Calculate summary statistics (forecast period only)
+            forecast_period_signals = signals.loc[signals.index > hist_end]
+            total_warnings = forecast_period_signals["EWS_score"].sum()
+            gdp_warnings = forecast_period_signals["GDP_warning"].sum()
+            pce_warnings = forecast_period_signals["PCE_warning"].sum()
+            unemp_warnings = forecast_period_signals["Unemp_warning"].sum()
             
-            # Get warning dates
+            # Get warning dates (forecast period only for stress test relevance)
             warning_dates = {
-                "GDP_growth": forecast_signals[forecast_signals["GDP_warning"] == 1].index.strftime('%Y-%m-%d').tolist(),
-                "PCE_growth": forecast_signals[forecast_signals["PCE_warning"] == 1].index.strftime('%Y-%m-%d').tolist(),
-                "Unemployment_change": forecast_signals[forecast_signals["Unemp_warning"] == 1].index.strftime('%Y-%m-%d').tolist()
+                "GDP_growth": forecast_period_signals[forecast_period_signals["GDP_warning"] == 1].index.strftime('%Y-%m-%d').tolist(),
+                "PCE_growth": forecast_period_signals[forecast_period_signals["PCE_warning"] == 1].index.strftime('%Y-%m-%d').tolist(),
+                "Unemployment_change": forecast_period_signals[forecast_period_signals["Unemp_warning"] == 1].index.strftime('%Y-%m-%d').tolist()
             }
             
             # Get EWS scores over time
