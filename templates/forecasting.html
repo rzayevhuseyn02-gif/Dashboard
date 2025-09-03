@@ -83,7 +83,6 @@
                                     <strong>Forecast Model:</strong>
                                 </label>
                                 <select class="form-select" id="forecast-model">
-                                    <option value="linear">Linear Regression</option>
                                     <option value="var" selected>VAR Model</option>
                                     <option value="arima">ARIMA Model</option>
                                 </select>
@@ -181,9 +180,6 @@
                 </div>
             </div>
         </div>
-
-
-
         <!-- Forecast Summary -->
         <div class="row mb-4">
             <div class="col-12">
@@ -233,7 +229,6 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <!-- Forecast Statistics -->
                         <div class="row mt-4">
                             <div class="col-12">
@@ -272,14 +267,12 @@
             </div>
         </div>
     </div>
-
     <!-- Loading Spinner -->
     <div id="loading-spinner" class="loading-overlay">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         class Forecasting {
@@ -339,10 +332,8 @@
 
             updateProjectionTitles() {
                 // Update projection titles to show current period and model
-                let modelText = 'Linear';
-                if (this.forecastModel === 'var') {
-                    modelText = 'VAR';
-                } else if (this.forecastModel === 'arima') {
+                let modelText = 'VAR';
+                if (this.forecastModel === 'arima') {
                     modelText = 'ARIMA';
                 }
                 
@@ -1000,8 +991,6 @@
                         endpoint = `/api/forecasting/var?periods=${this.forecastPeriods}`;
                     } else if (this.forecastModel === 'arima') {
                         endpoint = `/api/forecasting/arima?periods=${this.forecastPeriods}`;
-                    } else {
-                        endpoint = `/api/forecasting/configurable?periods=${this.forecastPeriods}`;
                     }
                     
                     const response = await fetch(endpoint);
@@ -1011,8 +1000,6 @@
                             this.displayVARForecasts(result);
                         } else if (this.forecastModel === 'arima') {
                             this.displayARIMAForecasts(result);
-                        } else {
-                            this.displayForecasts(result.forecasts);
                         }
                     } else {
                         console.error('Forecasting error:', result.error);
