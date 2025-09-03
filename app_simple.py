@@ -1334,6 +1334,186 @@ def arima_forecasting():
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': f'ARIMA model error: {str(e)}'}), 500
 
+@app.route('/api/stress-testing/arima-chart-data', methods=['POST'])
+def arima_stress_testing_chart_data():
+    """Generate chart data for ARIMA-based stress testing (specifically for unemployment)"""
+    try:
+        from flask import request
+        import numpy as np
+        import pandas as pd
+        from statsmodels.tsa.arima.model import ARIMA
+        
+        # Get stress parameters
+        params = request.get_json()
+        gdp_shock = params.get('gdp', -0.05)
+        unemployment_shock = params.get('unemployment', 0.02)
+        pce_shock = params.get('pce', -0.03)
+        duration = params.get('duration', 12)
+        
+        # Check if data is loaded
+        if data is None or len(data) < 24:
+            return jsonify({'success': False, 'error': 'Insufficient data for ARIMA model'}), 400
+        
+        # Load and prepare data
+        df = pd.DataFrame(data)
+        df['observation_date'] = pd.to_datetime(df['observation_date'])
+        df.set_index('observation_date', inplace=True)
+        
+        # Get historical data (last 24 months for context)
+        historical_data = df.tail(24)
+        
+        # Generate ARIMA forecast for unemployment (since it's more accurate)
+        unemployment_series = df['Unemployment_Rate']
+        
+        # Fit ARIMA model for unemployment
+        model = ARIMA(unemployment_series, order=(1,1,1))
+        model_fit = model.fit()
+        
+        # Generate baseline forecast
+        forecast_result = model_fit.get_forecast(steps=duration)
+        baseline_forecast = forecast_result.predicted_mean
+        
+        # Generate stress scenario forecast
+        # Apply unemployment shock to the baseline forecast
+        stressed_forecast = baseline_forecast * (1 + unemployment_shock)
+        
+        # Create date ranges
+        last_date = df.index[-1]
+        freq = pd.infer_freq(df.index) or "M"
+        
+        # Historical dates
+        historical_dates = historical_data.index.strftime('%Y-%m-%d').tolist()
+        
+        # Future dates for forecasts
+        future_dates = pd.date_range(start=last_date + pd.tseries.frequencies.to_offset(freq),
+                                   periods=duration, freq=freq).strftime('%Y-%m-%d').tolist()
+        
+        # Prepare chart data
+        chart_data = {
+            'historical': {
+                'dates': historical_dates,
+                'unemployment': historical_data['Unemployment_Rate'].tolist(),
+                'gdp': historical_data['GDP'].tolist(),
+                'consumption': historical_data['Personal_Consumption_Expenditure'].tolist()
+            },
+            'baseline': {
+                'dates': future_dates,
+                'unemployment': baseline_forecast.tolist(),
+                'gdp': [],  # Will be filled with VAR or simple projection
+                'consumption': []  # Will be filled with VAR or simple projection
+            },
+            'stressed': {
+                'dates': future_dates,
+                'unemployment': stressed_forecast.tolist(),
+                'gdp': [],  # Will be filled with VAR or simple projection
+                'consumption': []  # Will be filled with VAR or simple projection
+            },
+            'stress_parameters': {
+                'gdp_shock': gdp_shock,
+                'unemployment_shock': unemployment_shock,
+                'pce_shock': pce_shock,
+                'duration': duration
+            },
+            'model_info': {
+                'unemployment_arima': {
+                    'aic': float(model_fit.aic),
+                    'bic': float(model_fit.bic),
+                    'order': (1, 1, 1)
+                }
+            }
+        }
+        
+        # For GDP and consumption, use VAR model (since ARIMA is specifically for unemployment)
+        try:
+            from statsmodels.tsa.vector_ar.var_model import VAR
+            
+            # Prepare VAR data
+            var_data = df[['GDP', 'Personal_Consumption_Expenditure', 'Unemployment_Rate']].copy()
+            df_diff = var_data.diff().dropna()
+            
+            if len(df_diff) >= 12:
+                # Fit VAR model
+                model = VAR(df_diff)
+                var_results = model.fit(maxlags=4, ic="aic")
+                lag_order = var_results.k_ar
+                
+                # Generate VAR forecast
+                forecast_diff = var_results.forecast(df_diff.values[-lag_order:], steps=duration)
+                
+                # Reconstruct levels
+                last_values = var_data.iloc[-1]
+                forecast_diff_df = pd.DataFrame(forecast_diff, columns=var_data.columns)
+                forecast_levels = forecast_diff_df.cumsum() + last_values.values
+                
+                # Extract GDP and PCE forecasts
+                gdp_forecast = forecast_levels['GDP'].values
+                consumption_forecast = forecast_levels['Personal_Consumption_Expenditure'].values
+                
+                # Apply stress shocks
+                stressed_gdp = gdp_forecast * (1 + gdp_shock)
+                stressed_consumption = consumption_forecast * (1 + pce_shock)
+                
+                chart_data['baseline']['gdp'] = gdp_forecast.tolist()
+                chart_data['baseline']['consumption'] = consumption_forecast.tolist()
+                chart_data['stressed']['gdp'] = stressed_gdp.tolist()
+                chart_data['stressed']['consumption'] = stressed_consumption.tolist()
+                
+                # Add VAR model info
+                chart_data['model_info']['var_model'] = {
+                    'aic': float(var_results.aic),
+                    'bic': float(var_results.bic),
+                    'optimal_lags': int(lag_order)
+                }
+                
+            else:
+                # Fallback to simple trend if VAR fails
+                last_gdp = df['GDP'].iloc[-1]
+                last_consumption = df['Personal_Consumption_Expenditure'].iloc[-1]
+                gdp_trend = df['GDP'].diff().mean()
+                consumption_trend = df['Personal_Consumption_Expenditure'].diff().mean()
+                
+                for i in range(duration):
+                    baseline_gdp = last_gdp + gdp_trend * (i + 1)
+                    baseline_consumption = last_consumption + consumption_trend * (i + 1)
+                    stressed_gdp = baseline_gdp * (1 + gdp_shock)
+                    stressed_consumption = baseline_consumption * (1 + pce_shock)
+                    
+                    chart_data['baseline']['gdp'].append(float(baseline_gdp))
+                    chart_data['baseline']['consumption'].append(float(baseline_consumption))
+                    chart_data['stressed']['gdp'].append(float(stressed_gdp))
+                    chart_data['stressed']['consumption'].append(float(stressed_consumption))
+                    
+        except Exception as e:
+            print(f"VAR model failed, using simple trend: {str(e)}")
+            # Fallback to simple trend
+            last_gdp = df['GDP'].iloc[-1]
+            last_consumption = df['Personal_Consumption_Expenditure'].iloc[-1]
+            gdp_trend = df['GDP'].diff().mean()
+            consumption_trend = df['Personal_Consumption_Expenditure'].diff().mean()
+            
+            for i in range(duration):
+                baseline_gdp = last_gdp + gdp_trend * (i + 1)
+                baseline_consumption = last_consumption + consumption_trend * (i + 1)
+                stressed_gdp = baseline_gdp * (1 + gdp_shock)
+                stressed_consumption = baseline_consumption * (1 + pce_shock)
+                
+                chart_data['baseline']['gdp'].append(float(baseline_gdp))
+                chart_data['baseline']['consumption'].append(float(baseline_consumption))
+                chart_data['stressed']['gdp'].append(float(stressed_gdp))
+                chart_data['stressed']['consumption'].append(float(stressed_consumption))
+        
+        return jsonify({
+            'success': True,
+            'chart_data': chart_data,
+            'message': 'Hybrid model stress testing: ARIMA for unemployment, VAR for GDP & PCE'
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in ARIMA stress testing chart data: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': f'ARIMA stress testing error: {str(e)}'}), 500
+
 @app.route('/api/analysis/regression')
 def regression_analysis():
     """Simple regression analysis between variables"""

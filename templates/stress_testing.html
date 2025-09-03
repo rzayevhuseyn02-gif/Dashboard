@@ -272,7 +272,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">Indicator:</label>
                                 <select id="chart-indicator" class="form-select">
                                     <option value="gdp">GDP</option>
@@ -280,14 +280,21 @@
                                     <option value="consumption">Personal Consumption</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <label class="form-label">Forecast Model:</label>
+                                <select id="forecast-model-selector" class="form-select">
+                                    <option value="var" selected>VAR Model (GDP & PCE)</option>
+                                    <option value="arima">ARIMA Model (Unemployment)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <label class="form-label">Chart Type:</label>
                                 <select id="chart-type" class="form-select">
                                     <option value="combined">Combined View</option>
                                     <option value="separate">Separate Charts</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">Time Range:</label>
                                 <select id="time-range" class="form-select">
                                     <option value="12">12 Months</option>
@@ -295,10 +302,16 @@
                                     <option value="36">36 Months</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <button id="update-chart" class="btn btn-primary w-100">
                                     <i class="fas fa-sync-alt"></i> Update Chart
                                 </button>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="alert alert-info small mb-0">
+                                    <strong>VAR:</strong> GDP & PCE<br>
+                                    <strong>ARIMA:</strong> Unemployment
+                                </div>
                             </div>
                         </div>
                         <div id="comprehensive-chart-container">
@@ -313,7 +326,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="alert alert-success">
-                                        <strong>VAR Forecast:</strong> <span id="forecast-range"></span>
+                                        <strong id="forecast-model-label">ARIMA Forecast:</strong> <span id="forecast-range"></span>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -834,7 +847,11 @@
                 duration: results.stress_parameters.duration
             };
             
-            fetch('/api/stress-testing/chart-data', {
+            // Determine which endpoint to use based on forecast model
+            const forecastModel = document.getElementById('forecast-model-selector').value;
+            const endpoint = forecastModel === 'arima' ? '/api/stress-testing/arima-chart-data' : '/api/stress-testing/chart-data';
+            
+            fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -844,7 +861,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    createComprehensiveChart(data.chart_data);
+                    createComprehensiveChart(data.chart_data, forecastModel);
                 } else {
                     console.error('Error loading chart data:', data.error);
                 }
@@ -855,7 +872,7 @@
         }
         
         // Create comprehensive chart
-        function createComprehensiveChart(chartData) {
+        function createComprehensiveChart(chartData, forecastModel = 'var') {
             const indicator = document.getElementById('chart-indicator').value;
             const chartType = document.getElementById('chart-type').value;
             
@@ -884,6 +901,10 @@
                     break;
             }
             
+            // Determine forecast model name for display
+            const forecastModelName = forecastModel === 'arima' ? 'ARIMA' : 'VAR';
+            const forecastModelLabel = forecastModel === 'arima' ? 'ARIMA Baseline Forecast' : 'VAR Baseline Forecast';
+            
             // Create chart data
             const data = [
                 {
@@ -900,7 +921,7 @@
                     y: baselineValues,
                     type: 'scatter',
                     mode: 'lines+markers',
-                    name: 'VAR Baseline Forecast',
+                    name: forecastModelLabel,
                     line: { color: '#2ca02c', width: 2, dash: 'dash' },
                     marker: { size: 4 }
                 },
@@ -915,14 +936,38 @@
                 }
             ];
             
+            // Add model info annotation for ARIMA
+            let annotations = [];
+            if (forecastModel === 'arima' && chartData.model_info && chartData.model_info.unemployment_arima) {
+                const arimaInfo = chartData.model_info.unemployment_arima;
+                annotations.push({
+                    text: `ARIMA(${arimaInfo.order.join(',')}) - AIC: ${arimaInfo.aic.toFixed(2)}`,
+                    showarrow: false,
+                    xref: 'paper',
+                    yref: 'paper',
+                    x: 0.02,
+                    y: -0.15,
+                    font: { size: 10, color: 'gray' }
+                });
+            }
+            
+            // Create title based on model and indicator
+            let title;
+            if (forecastModel === 'arima') {
+                title = `${indicator.toUpperCase()}: Historical Data + ARIMA Forecast + Stress Scenario`;
+            } else {
+                title = `${indicator.toUpperCase()}: Historical Data + VAR Forecast + Stress Scenario`;
+            }
+            
             const layout = {
-                title: `${indicator.toUpperCase()}: Historical Data + VAR Forecast + Stress Scenario`,
+                title: title,
                 xaxis: { title: 'Date' },
                 yaxis: { title: yAxisTitle },
                 template: 'plotly_white',
                 height: 500,
                 legend: { x: 0.02, y: 0.98 },
-                hovermode: 'x unified'
+                hovermode: 'x unified',
+                annotations: annotations
             };
             
             Plotly.newPlot('comprehensive-chart', data, layout);
@@ -934,6 +979,9 @@
                 `${chartData.baseline.dates[0]} to ${chartData.baseline.dates[chartData.baseline.dates.length-1]}`;
             document.getElementById('stress-info').textContent = 
                 `GDP: ${(chartData.stress_parameters?.gdp_shock * 100).toFixed(1)}%, Unemployment: ${(chartData.stress_parameters?.unemployment_shock * 100).toFixed(1)}%, PCE: ${(chartData.stress_parameters?.pce_shock * 100).toFixed(1)}%`;
+            
+            // Update forecast model label
+            document.getElementById('forecast-model-label').textContent = `${forecastModelName} Forecast:`;
         }
         
         // Get risk level description
@@ -1200,6 +1248,22 @@
             });
             
             document.getElementById('chart-indicator').addEventListener('change', function() {
+                const indicator = this.value;
+                const modelSelector = document.getElementById('forecast-model-selector');
+                
+                // Auto-select model based on indicator
+                if (indicator === 'unemployment') {
+                    modelSelector.value = 'arima';
+                } else {
+                    modelSelector.value = 'var';
+                }
+                
+                if (currentResults) {
+                    loadComprehensiveChartData(currentResults);
+                }
+            });
+            
+            document.getElementById('forecast-model-selector').addEventListener('change', function() {
                 if (currentResults) {
                     loadComprehensiveChartData(currentResults);
                 }
