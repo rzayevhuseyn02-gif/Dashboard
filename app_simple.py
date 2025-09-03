@@ -1176,6 +1176,164 @@ def var_forecasting():
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': f'VAR model error: {str(e)}'}), 500
 
+@app.route('/api/forecasting/arima')
+def arima_forecasting():
+    """ARIMA forecasting model - EXACT notebook logic"""
+    try:
+        from flask import request
+        import numpy as np
+        import pandas as pd
+        from statsmodels.tsa.arima.model import ARIMA
+        
+        # Get forecast period from query parameters
+        forecast_periods = request.args.get('periods', 6, type=int)
+        forecast_periods = max(6, min(36, forecast_periods))
+        
+        # Check if data is loaded
+        if data is None or len(data) < 24:  # ARIMA needs more data
+            return jsonify({'success': False, 'error': 'Insufficient data for ARIMA model (minimum 24 observations)'}), 400
+        
+        # ---------------------------
+        # Step 1: Load your dataset (matching notebook exactly)
+        # ---------------------------
+        df = pd.DataFrame(data)
+        df['observation_date'] = pd.to_datetime(df['observation_date'])
+        df.set_index('observation_date', inplace=True)
+        
+        # Select variables for ARIMA model (matching notebook column names exactly)
+        arima_data = df[['GDP', 'Personal_Consumption_Expenditure', 'Unemployment_Rate']].copy()
+        
+        # DEBUG: Print data info to compare with notebook
+        print("=== ARIMA FORECASTING DEBUG INFO ===")
+        print(f"Data shape: {arima_data.shape}")
+        print(f"Date range: {arima_data.index[0]} to {arima_data.index[-1]}")
+        print(f"Last 5 GDP values: {arima_data['GDP'].tail().values}")
+        print(f"Last 5 PCE values: {arima_data['Personal_Consumption_Expenditure'].tail().values}")
+        print(f"Last 5 Unemployment values: {arima_data['Unemployment_Rate'].tail().values}")
+        
+        # ---------------------------
+        # Step 2: Detect frequency automatically from df index (EXACT notebook method)
+        # ---------------------------
+        freq = pd.infer_freq(arima_data.index) or "M"   # fallback to monthly if not detected
+        
+        # ---------------------------
+        # Step 3: Forecast index (future periods) (EXACT notebook method)
+        # ---------------------------
+        forecast_index = pd.date_range(start=arima_data.index[-1] + pd.tseries.frequencies.to_offset(freq),
+                                       periods=forecast_periods, freq=freq)
+        
+        # ---------------------------
+        # Step 4: Store forecasts (EXACT notebook method)
+        # ---------------------------
+        arima_forecasts = pd.DataFrame(index=forecast_index, columns=arima_data.columns)
+        
+        # ---------------------------
+        # Step 5: Fit ARIMA and forecast each series (EXACT notebook method)
+        # ---------------------------
+        model_info = {}
+        forecasts_with_ci = []
+        
+        for col in arima_data.columns:
+            try:
+                # Fit ARIMA model with order (1,1,1) - you can tune (p,d,q)
+                model = ARIMA(arima_data[col], order=(1,1,1))
+                model_fit = model.fit()
+                
+                # Get forecast with confidence intervals
+                forecast_result = model_fit.get_forecast(steps=forecast_periods)
+                forecast_values = forecast_result.predicted_mean
+                confidence_intervals = forecast_result.conf_int()
+                
+                # Store forecasts
+                arima_forecasts[col] = forecast_values.values
+                
+                # Store model info
+                model_info[col] = {
+                    'aic': float(model_fit.aic),
+                    'bic': float(model_fit.bic),
+                    'order': (1, 1, 1),
+                    'params': model_fit.params.to_dict()
+                }
+                
+                # Create forecast data structure for this variable
+                for i in range(forecast_periods):
+                    if i >= len(forecasts_with_ci):
+                        forecasts_with_ci.append({})
+                    
+                    # Map column names to the expected format
+                    if col == 'GDP':
+                        key = 'gdp'
+                    elif col == 'Personal_Consumption_Expenditure':
+                        key = 'pce'
+                    elif col == 'Unemployment_Rate':
+                        key = 'unemployment'
+                    else:
+                        key = col.lower().replace('_', '')
+                    
+                    forecasts_with_ci[i][key] = {
+                        'value': float(forecast_values.iloc[i]),
+                        'lower_bound': float(confidence_intervals.iloc[i, 0]),
+                        'upper_bound': float(confidence_intervals.iloc[i, 1])
+                    }
+                
+                print(f"ARIMA model for {col}: AIC={model_fit.aic:.2f}, BIC={model_fit.bic:.2f}")
+                
+            except Exception as e:
+                print(f"Error fitting ARIMA for {col}: {str(e)}")
+                # Use simple trend projection as fallback
+                recent_values = arima_data[col].tail(12).values
+                trend = np.mean(np.diff(recent_values))
+                last_value = recent_values[-1]
+                
+                for i in range(forecast_periods):
+                    if i >= len(forecasts_with_ci):
+                        forecasts_with_ci.append({})
+                    
+                    # Map column names to the expected format
+                    if col == 'GDP':
+                        key = 'gdp'
+                    elif col == 'Personal_Consumption_Expenditure':
+                        key = 'pce'
+                    elif col == 'Unemployment_Rate':
+                        key = 'unemployment'
+                    else:
+                        key = col.lower().replace('_', '')
+                    
+                    forecast_value = last_value + trend * (i + 1)
+                    forecasts_with_ci[i][key] = {
+                        'value': float(forecast_value),
+                        'lower_bound': float(forecast_value * 0.95),
+                        'upper_bound': float(forecast_value * 1.05)
+                    }
+        
+        # DEBUG: Print final forecast info
+        print(f"Final ARIMA forecasts shape: {arima_forecasts.shape}")
+        print(f"First 3 forecast values: {arima_forecasts.iloc[:3].values}")
+        print("=== END ARIMA DEBUG INFO ===")
+        
+        return jsonify({
+            'success': True,
+            'forecasts': forecasts_with_ci,
+            'model_info': model_info,
+            'arima_summary': {
+                'frequency_detected': freq,
+                'forecast_periods': forecast_periods,
+                'models_fitted': len(model_info)
+            },
+            'debug_info': {
+                'last_5_gdp': arima_data['GDP'].tail().tolist(),
+                'last_5_pce': arima_data['Personal_Consumption_Expenditure'].tail().tolist(),
+                'last_5_unemployment': arima_data['Unemployment_Rate'].tail().tolist(),
+                'first_3_forecast_values': arima_forecasts.iloc[:3].values.tolist()
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in ARIMA forecasting: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': f'ARIMA model error: {str(e)}'}), 500
+
 @app.route('/api/analysis/regression')
 def regression_analysis():
     """Simple regression analysis between variables"""

@@ -85,6 +85,7 @@
                                 <select class="form-select" id="forecast-model">
                                     <option value="linear">Linear Regression</option>
                                     <option value="var" selected>VAR Model</option>
+                                    <option value="arima">ARIMA Model</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -338,7 +339,13 @@
 
             updateProjectionTitles() {
                 // Update projection titles to show current period and model
-                const modelText = this.forecastModel === 'var' ? 'VAR' : 'Linear';
+                let modelText = 'Linear';
+                if (this.forecastModel === 'var') {
+                    modelText = 'VAR';
+                } else if (this.forecastModel === 'arima') {
+                    modelText = 'ARIMA';
+                }
+                
                 document.getElementById('gdp-projection-title').textContent = 
                     `GDP Projection (${this.forecastPeriods} months) - ${modelText}`;
                 document.getElementById('pce-projection-title').textContent = 
@@ -658,6 +665,320 @@
                 }
             }
 
+            displayARIMAForecasts(arimaResult) {
+                // Display ARIMA model forecasts with EXACT notebook logic
+                this.displayARIMAGDPForecast(arimaResult);
+                this.displayARIMAPCEForecast(arimaResult);
+                this.displayARIMAUnemploymentForecast(arimaResult);
+                this.updateARIMAProjections(arimaResult);
+                this.updateARIMAStatistics(arimaResult);
+            }
+
+            displayARIMAGDPForecast(arimaResult) {
+                // Get historical data for context (EXACT notebook method)
+                fetch('/api/data')
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            const dates = result.data.map(row => row.observation_date);
+                            const gdpValues = result.data.map(row => row.GDP);
+                            
+                            // Create future dates for projections (EXACT notebook method)
+                            const lastDate = new Date(dates[dates.length - 1]);
+                            const futureDates = [];
+                            for (let i = 1; i <= this.forecastPeriods; i++) {
+                                const futureDate = new Date(lastDate);
+                                futureDate.setMonth(lastDate.getMonth() + i);
+                                futureDates.push(futureDate.toISOString().split('T')[0]);
+                            }
+
+                            // Extract ARIMA forecast values and confidence intervals (EXACT notebook method)
+                            const projections = arimaResult.forecasts.map(f => f.gdp.value);
+                            const lowerBounds = arimaResult.forecasts.map(f => f.gdp.lower_bound);
+                            const upperBounds = arimaResult.forecasts.map(f => f.gdp.upper_bound);
+
+                            const chartData = [
+                                {
+                                    x: dates,
+                                    y: gdpValues,
+                                    type: 'scatter',
+                                    mode: 'lines+markers',
+                                    name: 'Actual GDP',
+                                    line: {color: '#1f77b4', width: 2},
+                                    marker: {size: 4}
+                                },
+                                {
+                                    x: futureDates,
+                                    y: projections,
+                                    type: 'scatter',
+                                    mode: 'lines+markers',
+                                    name: 'ARIMA Forecast GDP (EXACT Notebook Logic)',
+                                    line: {color: '#ff7f0e', width: 2, dash: 'dash'},
+                                    marker: {size: 4}
+                                },
+                                {
+                                    x: futureDates,
+                                    y: upperBounds,
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    name: 'Upper Confidence Bound',
+                                    line: {color: 'rgba(255, 127, 14, 0.3)', width: 1},
+                                    showlegend: false
+                                },
+                                {
+                                    x: futureDates,
+                                    y: lowerBounds,
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    fill: 'tonexty',
+                                    fillcolor: 'rgba(255, 127, 14, 0.1)',
+                                    name: 'Lower Confidence Bound',
+                                    line: {color: 'rgba(255, 127, 14, 0.3)', width: 1},
+                                    showlegend: false
+                                }
+                            ];
+
+                            const layout = {
+                                title: `ARIMA Forecast for GDP (EXACT Notebook Logic)`,
+                                xaxis: {title: 'Time'},
+                                yaxis: {title: 'GDP (Billions of Dollars)'},
+                                template: 'plotly_white',
+                                annotations: [{
+                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals (EXACT notebook method)',
+                                    showarrow: false,
+                                    xref: 'paper',
+                                    yref: 'paper',
+                                    x: 0.02,
+                                    y: -0.15,
+                                    font: {size: 10, color: 'gray'}
+                                }]
+                            };
+
+                            Plotly.newPlot('gdp-forecast-chart', chartData, layout, {
+                                responsive: true,
+                                displayModeBar: false
+                            });
+                        }
+                    });
+            }
+
+            displayARIMAPCEForecast(arimaResult) {
+                // Get historical data for context (EXACT notebook method)
+                fetch('/api/data')
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            const dates = result.data.map(row => row.observation_date);
+                            const pceValues = result.data.map(row => row.Personal_Consumption_Expenditure);
+                            
+                            // Create future dates for projections (EXACT notebook method)
+                            const lastDate = new Date(dates[dates.length - 1]);
+                            const futureDates = [];
+                            for (let i = 1; i <= this.forecastPeriods; i++) {
+                                const futureDate = new Date(lastDate);
+                                futureDate.setMonth(lastDate.getMonth() + i);
+                                futureDates.push(futureDate.toISOString().split('T')[0]);
+                            }
+
+                            // Extract ARIMA forecast values and confidence intervals (EXACT notebook method)
+                            const projections = arimaResult.forecasts.map(f => f.pce.value);
+                            const lowerBounds = arimaResult.forecasts.map(f => f.pce.lower_bound);
+                            const upperBounds = arimaResult.forecasts.map(f => f.pce.upper_bound);
+
+                            const chartData = [
+                                {
+                                    x: dates,
+                                    y: pceValues,
+                                    type: 'scatter',
+                                    mode: 'lines+markers',
+                                    name: 'Actual PCE',
+                                    line: {color: '#2ca02c', width: 2},
+                                    marker: {size: 4}
+                                },
+                                {
+                                    x: futureDates,
+                                    y: projections,
+                                    type: 'scatter',
+                                    mode: 'lines+markers',
+                                    name: 'ARIMA Forecast PCE (EXACT Notebook Logic)',
+                                    line: {color: '#d62728', width: 2, dash: 'dash'},
+                                    marker: {size: 4}
+                                },
+                                {
+                                    x: futureDates,
+                                    y: upperBounds,
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    name: 'Upper Confidence Bound',
+                                    line: {color: 'rgba(214, 39, 40, 0.3)', width: 1},
+                                    showlegend: false
+                                },
+                                {
+                                    x: futureDates,
+                                    y: lowerBounds,
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    fill: 'tonexty',
+                                    fillcolor: 'rgba(214, 39, 40, 0.1)',
+                                    name: 'Lower Confidence Bound',
+                                    line: {color: 'rgba(214, 39, 40, 0.3)', width: 1},
+                                    showlegend: false
+                                }
+                            ];
+
+                            const layout = {
+                                title: `ARIMA Forecast for Personal Consumption Expenditure (EXACT Notebook Logic)`,
+                                xaxis: {title: 'Time'},
+                                yaxis: {title: 'Personal Consumption Expenditure (Billions of Dollars)'},
+                                template: 'plotly_white',
+                                annotations: [{
+                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals (EXACT notebook method)',
+                                    showarrow: false,
+                                    xref: 'paper',
+                                    yref: 'paper',
+                                    x: 0.02,
+                                    y: -0.15,
+                                    font: {size: 10, color: 'gray'}
+                                }]
+                            };
+
+                            Plotly.newPlot('pce-forecast-chart', chartData, layout, {
+                                responsive: true,
+                                displayModeBar: false
+                            });
+                        }
+                    });
+            }
+
+            displayARIMAUnemploymentForecast(arimaResult) {
+                // Get historical data for context (EXACT notebook method)
+                fetch('/api/data')
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            const dates = result.data.map(row => row.observation_date);
+                            const unempValues = result.data.map(row => row.Unemployment_Rate);
+                            
+                            // Create future dates for projections (EXACT notebook method)
+                            const lastDate = new Date(dates[dates.length - 1]);
+                            const futureDates = [];
+                            for (let i = 1; i <= this.forecastPeriods; i++) {
+                                const futureDate = new Date(lastDate);
+                                futureDate.setMonth(lastDate.getMonth() + i);
+                                futureDates.push(futureDate.toISOString().split('T')[0]);
+                            }
+
+                            // Extract ARIMA forecast values and confidence intervals (EXACT notebook method)
+                            const projections = arimaResult.forecasts.map(f => f.unemployment.value);
+                            const lowerBounds = arimaResult.forecasts.map(f => f.unemployment.lower_bound);
+                            const upperBounds = arimaResult.forecasts.map(f => f.unemployment.upper_bound);
+
+                            const chartData = [
+                                {
+                                    x: dates,
+                                    y: unempValues,
+                                    type: 'scatter',
+                                    mode: 'lines+markers',
+                                    name: 'Actual Unemployment Rate',
+                                    line: {color: '#9467bd', width: 2},
+                                    marker: {size: 4}
+                                },
+                                {
+                                    x: futureDates,
+                                    y: projections,
+                                    type: 'scatter',
+                                    mode: 'lines+markers',
+                                    name: 'ARIMA Forecast Unemployment Rate (EXACT Notebook Logic)',
+                                    line: {color: '#8c564b', width: 2, dash: 'dash'},
+                                    marker: {size: 4}
+                                },
+                                {
+                                    x: futureDates,
+                                    y: upperBounds,
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    name: 'Upper Confidence Bound',
+                                    line: {color: 'rgba(140, 86, 75, 0.3)', width: 1},
+                                    showlegend: false
+                                },
+                                {
+                                    x: futureDates,
+                                    y: lowerBounds,
+                                    type: 'scatter',
+                                    mode: 'lines',
+                                    fill: 'tonexty',
+                                    fillcolor: 'rgba(140, 86, 75, 0.1)',
+                                    name: 'Lower Confidence Bound',
+                                    line: {color: 'rgba(140, 86, 75, 0.3)', width: 1},
+                                    showlegend: false
+                                }
+                            ];
+
+                            const layout = {
+                                title: `ARIMA Forecast for Unemployment Rate (EXACT Notebook Logic)`,
+                                xaxis: {title: 'Time'},
+                                yaxis: {title: 'Unemployment Rate (%)'},
+                                template: 'plotly_white',
+                                annotations: [{
+                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals (EXACT notebook method)',
+                                    showarrow: false,
+                                    xref: 'paper',
+                                    yref: 'paper',
+                                    x: 0.02,
+                                    y: -0.15,
+                                    font: {size: 10, color: 'gray'}
+                                }]
+                            };
+
+                            Plotly.newPlot('unemployment-forecast-chart', chartData, layout, {
+                                responsive: true,
+                                displayModeBar: false
+                            });
+                        }
+                    });
+            }
+
+            updateARIMAProjections(arimaResult) {
+                // Update projection values for ARIMA model
+                if (arimaResult.forecasts.length > 0) {
+                    const lastForecast = arimaResult.forecasts[arimaResult.forecasts.length - 1];
+                    
+                    // GDP
+                    document.getElementById('gdp-projection').textContent = 
+                        `$${lastForecast.gdp.value.toFixed(0)}B`;
+                    document.getElementById('gdp-confidence').textContent = 
+                        `${(this.confidenceLevel * 100).toFixed(0)}% Confidence`;
+                    
+                    // PCE
+                    document.getElementById('pce-projection').textContent = 
+                        `$${lastForecast.pce.value.toFixed(0)}B`;
+                    document.getElementById('pce-confidence').textContent = 
+                        `${(this.confidenceLevel * 100).toFixed(0)}% Confidence`;
+                    
+                    // Unemployment
+                    document.getElementById('unemployment-projection').textContent = 
+                        `${lastForecast.unemployment.value.toFixed(1)}%`;
+                    document.getElementById('unemployment-confidence').textContent = 
+                        `${(this.confidenceLevel * 100).toFixed(0)}% Confidence`;
+                }
+            }
+
+            updateARIMAStatistics(arimaResult) {
+                // Update ARIMA model statistics
+                if (arimaResult.model_info) {
+                    const gdpInfo = arimaResult.model_info.GDP;
+                    const pceInfo = arimaResult.model_info.Personal_Consumption_Expenditure;
+                    const unempInfo = arimaResult.model_info.Unemployment_Rate;
+                    
+                    document.getElementById('gdp-trend').textContent = 
+                        `ARIMA(1,1,1) - AIC: ${gdpInfo.aic.toFixed(2)}`;
+                    document.getElementById('pce-trend').textContent = 
+                        `ARIMA(1,1,1) - AIC: ${pceInfo.aic.toFixed(2)}`;
+                    document.getElementById('unemployment-trend').textContent = 
+                        `ARIMA(1,1,1) - AIC: ${unempInfo.aic.toFixed(2)}`;
+                }
+            }
+
             showError(message) {
                 // Display error message to user
                 console.error('Forecasting error:', message);
@@ -677,6 +998,8 @@
                     let endpoint = '';
                     if (this.forecastModel === 'var') {
                         endpoint = `/api/forecasting/var?periods=${this.forecastPeriods}`;
+                    } else if (this.forecastModel === 'arima') {
+                        endpoint = `/api/forecasting/arima?periods=${this.forecastPeriods}`;
                     } else {
                         endpoint = `/api/forecasting/configurable?periods=${this.forecastPeriods}`;
                     }
@@ -686,6 +1009,8 @@
                     if (result.success) {
                         if (this.forecastModel === 'var') {
                             this.displayVARForecasts(result);
+                        } else if (this.forecastModel === 'arima') {
+                            this.displayARIMAForecasts(result);
                         } else {
                             this.displayForecasts(result.forecasts);
                         }
