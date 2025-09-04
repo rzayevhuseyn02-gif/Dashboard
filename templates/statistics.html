@@ -277,8 +277,8 @@
                         // Validate statistics object
                         if (this.validateStatistics(result.statistics)) {
                             this.displayStatistics(result.statistics);
-                            this.createDistributionCharts(result.statistics);
-                            this.createBoxPlot(result.statistics);
+                            await this.createDistributionCharts(result.statistics);
+                            await this.createBoxPlot(result.statistics);
                             this.displayPercentiles(result.statistics);
                         } else {
                             this.showError('Invalid statistics data received');
@@ -386,80 +386,146 @@
                 `;
             }
 
-            createDistributionCharts(stats) {
+            async createDistributionCharts(stats) {
                 // Create histogram data for each variable using actual data
-                this.createHistogram('gdp-distribution', stats.gdp, 'GDP Distribution', '#1f77b4');
-                this.createHistogram('pce-distribution', stats.pce, 'PCE Distribution', '#2ca02c');
-                this.createHistogram('unemp-distribution', stats.unemployment, 'Unemployment Distribution', '#d62728');
+                await this.createHistogram('gdp-distribution', 'GDP', 'GDP Distribution', '#1f77b4');
+                await this.createHistogram('pce-distribution', 'Personal_Consumption_Expenditure', 'PCE Distribution', '#2ca02c');
+                await this.createHistogram('unemp-distribution', 'Unemployment_Rate', 'Unemployment Distribution', '#d62728');
             }
 
-            createHistogram(elementId, stats, title, color) {
-                // Validate stats object
-                if (!stats || !stats.max || !stats.min || !stats.mean || !stats.std_dev || !stats.count) {
-                    console.warn(`Invalid stats for ${title}:`, stats);
-                    return;
+            async createHistogram(elementId, dataColumn, title, color) {
+                try {
+                    // Get actual data values for proper histogram
+                    const response = await fetch('/api/data');
+                    const result = await response.json();
+                    
+                    if (!result.success || !result.data) {
+                        console.warn(`Failed to load data for ${title} histogram`);
+                        return;
+                    }
+
+                    // Extract actual values
+                    const values = result.data.map(row => row[dataColumn]).filter(val => val !== null && val !== undefined);
+                    
+                    if (values.length === 0) {
+                        console.warn(`No data available for ${title}`);
+                        return;
+                    }
+
+                    // Create histogram using actual data
+                    const chartData = [{
+                        x: values,
+                        type: 'histogram',
+                        marker: {color: color},
+                        name: title,
+                        nbinsx: 15,
+                        opacity: 0.7
+                    }];
+
+                    const layout = {
+                        title: title,
+                        xaxis: {title: 'Value'},
+                        yaxis: {title: 'Frequency'},
+                        template: 'plotly_white',
+                        bargap: 0.1
+                    };
+
+                    Plotly.newPlot(elementId, chartData, layout, {
+                        responsive: true,
+                        displayModeBar: false
+                    });
+                } catch (error) {
+                    console.error(`Error creating histogram for ${title}:`, error);
                 }
-
-                // Create histogram using actual data distribution
-                // We'll create a more realistic histogram based on the statistics
-                const binCount = 15;
-                const binSize = (stats.max - stats.min) / binCount;
-                const bins = [];
-                const counts = [];
-                
-                // Create more realistic distribution based on mean and std dev
-                for (let i = 0; i < binCount; i++) {
-                    const binStart = stats.min + i * binSize;
-                    const binEnd = binStart + binSize;
-                    bins.push(`${binStart.toFixed(0)}-${binEnd.toFixed(0)}`);
-                    
-                    // Create a more realistic distribution (normal-like with some variation)
-                    const binCenter = (binStart + binEnd) / 2;
-                    const distanceFromMean = Math.abs(binCenter - stats.mean);
-                    const normalizedDistance = distanceFromMean / stats.std_dev;
-                    
-                    // Normal distribution approximation
-                    let frequency = Math.exp(-0.5 * Math.pow(normalizedDistance, 2));
-                    frequency = frequency * (stats.count / binCount) * 2; // Scale appropriately
-                    
-                    // Add some randomness to make it look more realistic
-                    frequency = frequency * (0.8 + Math.random() * 0.4);
-                    
-                    counts.push(Math.max(1, Math.round(frequency)));
-                }
-
-                const chartData = [{
-                    x: bins,
-                    y: counts,
-                    type: 'bar',
-                    marker: {color: color},
-                    name: title
-                }];
-
-                const layout = {
-                    title: title,
-                    xaxis: {title: 'Value Range'},
-                    yaxis: {title: 'Frequency'},
-                    template: 'plotly_white'
-                };
-
-                Plotly.newPlot(elementId, chartData, layout, {
-                    responsive: true,
-                    displayModeBar: false
-                });
             }
 
-            createBoxPlot(stats) {
+            async createBoxPlot(stats) {
                 // Validate stats object
                 if (!stats || !stats.gdp || !stats.pce || !stats.unemployment) {
                     console.warn('Invalid stats for box plot:', stats);
                     return;
                 }
 
-                // Safe array creation with validation
+                try {
+                    // Get actual data values for proper box plot
+                    const response = await fetch('/api/data');
+                    const result = await response.json();
+                    
+                    if (!result.success || !result.data) {
+                        console.warn('Failed to load data for box plot');
+                        return;
+                    }
+
+                    // Extract actual values
+                    const gdpValues = result.data.map(row => row.GDP).filter(val => val !== null && val !== undefined);
+                    const pceValues = result.data.map(row => row.Personal_Consumption_Expenditure).filter(val => val !== null && val !== undefined);
+                    const unempValues = result.data.map(row => row.Unemployment_Rate).filter(val => val !== null && val !== undefined);
+
+                    const chartData = [
+                        {
+                            y: gdpValues,
+                            type: 'box',
+                            name: 'GDP',
+                            marker: {color: '#1f77b4'},
+                            boxpoints: 'outliers',
+                            jitter: 0.3,
+                            pointpos: -1.8,
+                            yaxis: 'y'
+                        },
+                        {
+                            y: pceValues,
+                            type: 'box',
+                            name: 'PCE',
+                            marker: {color: '#2ca02c'},
+                            boxpoints: 'outliers',
+                            jitter: 0.3,
+                            pointpos: -1.8,
+                            yaxis: 'y'
+                        },
+                        {
+                            y: unempValues,
+                            type: 'box',
+                            name: 'Unemployment',
+                            marker: {color: '#d62728'},
+                            boxpoints: false,
+                            yaxis: 'y2'
+                        }
+                    ];
+
+                    const layout = {
+                        title: 'Box Plots - Data Distribution & Outliers',
+                        yaxis: {
+                            title: 'GDP & PCE (Billions $)',
+                            side: 'left',
+                            showgrid: true
+                        },
+                        yaxis2: {
+                            title: 'Unemployment Rate (%)',
+                            side: 'right',
+                            overlaying: 'y',
+                            showgrid: false
+                        },
+                        template: 'plotly_white',
+                        showlegend: true,
+                        margin: {r: 80}
+                    };
+
+                    Plotly.newPlot('box-plot', chartData, layout, {
+                        responsive: true,
+                        displayModeBar: false
+                    });
+                } catch (error) {
+                    console.error('Error creating box plot:', error);
+                    // Fallback to simple box plot if data loading fails
+                    this.createSimpleBoxPlot(stats);
+                }
+            }
+
+            createSimpleBoxPlot(stats) {
+                // Fallback method using summary statistics
                 const safeArray = (statObj) => {
                     if (!statObj || !statObj.min || !statObj.p25 || !statObj.median || !statObj.p75 || !statObj.max) {
-                        return [0, 0, 0, 0, 0]; // Return safe default
+                        return [0, 0, 0, 0, 0];
                     }
                     return [statObj.min, statObj.p25, statObj.median, statObj.p75, statObj.max];
                 };
@@ -486,7 +552,7 @@
                 ];
 
                 const layout = {
-                    title: 'Box Plots - Data Distribution & Outliers',
+                    title: 'Box Plots - Data Distribution & Outliers (Summary)',
                     yaxis: {title: 'Values'},
                     template: 'plotly_white'
                 };

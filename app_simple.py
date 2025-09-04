@@ -777,7 +777,7 @@ def volatility_analysis():
     for i in range(1, len(data)):
         gdp_change = (data[i]['GDP'] - data[i-1]['GDP']) / data[i-1]['GDP']
         pce_change = (data[i]['Personal_Consumption_Expenditure'] - data[i-1]['Personal_Consumption_Expenditure']) / data[i-1]['Personal_Consumption_Expenditure']
-        unemp_change = data[i]['Unemployment_Rate'] - data[i-1]['Unemployment_Rate']
+        unemp_change = (data[i]['Unemployment_Rate'] - data[i-1]['Unemployment_Rate']) / data[i-1]['Unemployment_Rate']
         
         gdp_changes.append(gdp_change)
         pce_changes.append(pce_change)
@@ -789,9 +789,9 @@ def volatility_analysis():
         variance = sum((x - mean) ** 2 for x in changes) / n
         std_dev = math.sqrt(variance)
         
-        # Calculate Value at Risk (95% confidence)
+        # Calculate Value at Risk (95% confidence) - 5th percentile
         sorted_changes = sorted(changes)
-        var_95 = sorted_changes[int(0.05 * n)]
+        var_95 = sorted_changes[int(0.05 * n)] if n > 20 else sorted_changes[0]
         
         # Calculate maximum drawdown
         cumulative = [1]

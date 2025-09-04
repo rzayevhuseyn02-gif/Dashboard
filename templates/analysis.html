@@ -346,7 +346,7 @@
                 document.getElementById('pce-volatility').textContent = 
                     (volatility.pce.volatility * 100).toFixed(2) + '%';
                 document.getElementById('unemp-volatility').textContent = 
-                    volatility.unemployment.volatility.toFixed(2) + '%';
+                    (volatility.unemployment.volatility * 100).toFixed(2) + '%';
 
                 document.getElementById('gdp-var').textContent = 
                     (volatility.gdp.var_95 * 100).toFixed(2) + '%';
@@ -356,7 +356,8 @@
                     (volatility.gdp.max_drawdown * 100).toFixed(2) + '%';
 
                 // Calculate Sharpe ratio (simplified)
-                const sharpeRatio = volatility.gdp.mean_return / volatility.gdp.volatility;
+                const sharpeRatio = volatility.gdp.volatility > 0 ? 
+                    volatility.gdp.mean_return / volatility.gdp.volatility : 0;
                 document.getElementById('sharpe-ratio').textContent = 
                     sharpeRatio.toFixed(2);
             }
