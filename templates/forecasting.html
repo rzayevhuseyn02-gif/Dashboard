@@ -17,25 +17,57 @@
                 <i class="fas fa-chart-line me-2"></i>
                 US Economic Dashboard
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">
-                    <i class="fas fa-home me-1"></i>Dashboard
+            <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                <a class="nav-link nav-item-custom" href="/">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-top">Economic</div>
+                        <div class="nav-text-bottom">Overview</div>
+                    </div>
                 </a>
-                <a class="nav-link" href="/analysis">
-                    <i class="fas fa-chart-bar me-1"></i>Analysis
+                <a class="nav-link nav-item-custom" href="/analysis">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-bottom">Analysis</div>
+                    </div>
                 </a>
-                <a class="nav-link active" href="/forecasting">
-                    <i class="fas fa-chart-line me-1"></i>Forecasting
+                <a class="nav-link active nav-item-custom" href="/forecasting">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-bottom">Forecasting</div>
+                    </div>
                 </a>
-                <a class="nav-link" href="/statistics">
-                    <i class="fas fa-calculator me-1"></i>Statistics
+                <a class="nav-link nav-item-custom" href="/statistics">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-bottom">Statistics</div>
+                    </div>
                 </a>
-                <a class="nav-link" href="/stress_testing">
-                    <i class="fas fa-shield-alt me-1"></i>Stress Testing
+                <a class="nav-link nav-item-custom" href="/stress_testing">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-top">Stress</div>
+                        <div class="nav-text-bottom">Testing</div>
+                    </div>
                 </a>
-                <span class="navbar-text me-3">
-                    <i class="fas fa-calendar me-1"></i>
-                    <span id="current-date"></span>
+                <span class="navbar-text me-3 nav-item-custom">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-top" id="current-date-top"></div>
+                        <div class="nav-text-bottom" id="current-date-bottom"></div>
+                    </div>
                 </span>
                 <button class="btn btn-outline-light btn-sm" onclick="exportData()">
                     <i class="fas fa-download me-1"></i>Export Data
@@ -392,7 +424,7 @@
                                     y: projections,
                                     type: 'scatter',
                                     mode: 'lines+markers',
-                                    name: 'Forecast GDP (EXACT Notebook Logic)',
+                                    name: 'Forecast GDP',
                                     line: {color: '#ff7f0e', width: 2, dash: 'dash'},
                                     marker: {size: 4}
                                 },
@@ -419,12 +451,12 @@
                             ];
 
                             const layout = {
-                                title: `VAR Forecast for GDP (EXACT Notebook Logic)`,
+                                title: `VAR Forecast for GDP`,
                                 xaxis: {title: 'Time'},
                                 yaxis: {title: 'GDP (Billions of Dollars)'},
                                 template: 'plotly_white',
                                 annotations: [{
-                                    text: 'Using: df.diff() → VAR() → forecast() → cumsum() + last_values (EXACT notebook method)',
+                                    text: 'Using: df.diff() → VAR() → forecast() → cumsum() + last_values',
                                     showarrow: false,
                                     xref: 'paper',
                                     yref: 'paper',
@@ -480,7 +512,7 @@
                                     y: projections,
                                     type: 'scatter',
                                     mode: 'lines+markers',
-                                    name: 'Forecast PCE (EXACT Notebook Logic)',
+                                    name: 'Forecast PCE',
                                     line: {color: '#d62728', width: 2, dash: 'dash'},
                                     marker: {size: 4}
                                 },
@@ -507,12 +539,12 @@
                             ];
 
                             const layout = {
-                                title: `VAR Forecast for Personal Consumption Expenditure (EXACT Notebook Logic)`,
+                                title: `VAR Forecast for Personal Consumption Expenditure`,
                                 xaxis: {title: 'Time'},
                                 yaxis: {title: 'Personal Consumption Expenditure (Billions of Dollars)'},
                                 template: 'plotly_white',
                                 annotations: [{
-                                    text: 'Using: df.diff() → VAR() → forecast() → cumsum() + last_values (EXACT notebook method)',
+                                    text: 'Using: df.diff() → VAR() → forecast() → cumsum() + last_values',
                                     showarrow: false,
                                     xref: 'paper',
                                     yref: 'paper',
@@ -568,7 +600,7 @@
                                     y: projections,
                                     type: 'scatter',
                                     mode: 'lines+markers',
-                                    name: 'Forecast Unemployment Rate (EXACT Notebook Logic)',
+                                    name: 'Forecast Unemployment Rate',
                                     line: {color: '#8c564b', width: 2, dash: 'dash'},
                                     marker: {size: 4}
                                 },
@@ -595,12 +627,12 @@
                             ];
 
                             const layout = {
-                                title: `VAR Forecast for Unemployment Rate (EXACT Notebook Logic)`,
+                                title: `VAR Forecast for Unemployment Rate`,
                                 xaxis: {title: 'Time'},
                                 yaxis: {title: 'Unemployment Rate (%)'},
                                 template: 'plotly_white',
                                 annotations: [{
-                                    text: 'Using: df.diff() → VAR() → forecast() → cumsum() + last_values (EXACT notebook method)',
+                                    text: 'Using: df.diff() → VAR() → forecast() → cumsum() + last_values',
                                     showarrow: false,
                                     xref: 'paper',
                                     yref: 'paper',
@@ -703,7 +735,7 @@
                                     y: projections,
                                     type: 'scatter',
                                     mode: 'lines+markers',
-                                    name: 'ARIMA Forecast GDP (EXACT Notebook Logic)',
+                                    name: 'ARIMA Forecast GDP',
                                     line: {color: '#ff7f0e', width: 2, dash: 'dash'},
                                     marker: {size: 4}
                                 },
@@ -730,12 +762,12 @@
                             ];
 
                             const layout = {
-                                title: `ARIMA Forecast for GDP (EXACT Notebook Logic)`,
+                                title: `ARIMA Forecast for GDP`,
                                 xaxis: {title: 'Time'},
                                 yaxis: {title: 'GDP (Billions of Dollars)'},
                                 template: 'plotly_white',
                                 annotations: [{
-                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals (EXACT notebook method)',
+                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals',
                                     showarrow: false,
                                     xref: 'paper',
                                     yref: 'paper',
@@ -791,7 +823,7 @@
                                     y: projections,
                                     type: 'scatter',
                                     mode: 'lines+markers',
-                                    name: 'ARIMA Forecast PCE (EXACT Notebook Logic)',
+                                    name: 'ARIMA Forecast PCE',
                                     line: {color: '#d62728', width: 2, dash: 'dash'},
                                     marker: {size: 4}
                                 },
@@ -818,12 +850,12 @@
                             ];
 
                             const layout = {
-                                title: `ARIMA Forecast for Personal Consumption Expenditure (EXACT Notebook Logic)`,
+                                title: `ARIMA Forecast for Personal Consumption Expenditure`,
                                 xaxis: {title: 'Time'},
                                 yaxis: {title: 'Personal Consumption Expenditure (Billions of Dollars)'},
                                 template: 'plotly_white',
                                 annotations: [{
-                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals (EXACT notebook method)',
+                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals',
                                     showarrow: false,
                                     xref: 'paper',
                                     yref: 'paper',
@@ -879,7 +911,7 @@
                                     y: projections,
                                     type: 'scatter',
                                     mode: 'lines+markers',
-                                    name: 'ARIMA Forecast Unemployment Rate (EXACT Notebook Logic)',
+                                    name: 'ARIMA Forecast Unemployment Rate',
                                     line: {color: '#8c564b', width: 2, dash: 'dash'},
                                     marker: {size: 4}
                                 },
@@ -906,12 +938,12 @@
                             ];
 
                             const layout = {
-                                title: `ARIMA Forecast for Unemployment Rate (EXACT Notebook Logic)`,
+                                title: `ARIMA Forecast for Unemployment Rate`,
                                 xaxis: {title: 'Time'},
                                 yaxis: {title: 'Unemployment Rate (%)'},
                                 template: 'plotly_white',
                                 annotations: [{
-                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals (EXACT notebook method)',
+                                    text: 'Using: ARIMA(1,1,1) → forecast() → confidence intervals',
                                     showarrow: false,
                                     xref: 'paper',
                                     yref: 'paper',
@@ -1374,7 +1406,19 @@
         // Initialize forecasting
         document.addEventListener('DOMContentLoaded', () => {
             // Set current date
-            document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+            const now = new Date();
+            const currentDateTop = document.getElementById('current-date-top');
+            const currentDateBottom = document.getElementById('current-date-bottom');
+            
+            if (currentDateTop && currentDateBottom) {
+                const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+                const month = now.toLocaleDateString('en-US', { month: 'long' });
+                const day = now.getDate();
+                const year = now.getFullYear();
+                
+                currentDateTop.textContent = `${weekday}, ${month}`;
+                currentDateBottom.textContent = `${day}, ${year}`;
+            }
             
             // Create global instance
             window.forecastingInstance = new Forecasting();

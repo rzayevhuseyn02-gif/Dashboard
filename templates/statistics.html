@@ -17,25 +17,57 @@
                 <i class="fas fa-chart-line me-2"></i>
                 US Economic Dashboard
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">
-                    <i class="fas fa-home me-1"></i>Dashboard
+            <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                <a class="nav-link nav-item-custom" href="/">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-top">Economic</div>
+                        <div class="nav-text-bottom">Overview</div>
+                    </div>
                 </a>
-                <a class="nav-link" href="/analysis">
-                    <i class="fas fa-chart-bar me-1"></i>Analysis
+                <a class="nav-link nav-item-custom" href="/analysis">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-bottom">Analysis</div>
+                    </div>
                 </a>
-                <a class="nav-link" href="/forecasting">
-                    <i class="fas fa-chart-line me-1"></i>Forecasting
+                <a class="nav-link nav-item-custom" href="/forecasting">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-bottom">Forecasting</div>
+                    </div>
                 </a>
-                <a class="nav-link active" href="/statistics">
-                    <i class="fas fa-calculator me-1"></i>Statistics
+                <a class="nav-link active nav-item-custom" href="/statistics">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-bottom">Statistics</div>
+                    </div>
                 </a>
-                <a class="nav-link" href="/stress_testing">
-                    <i class="fas fa-shield-alt me-1"></i>Stress Testing
+                <a class="nav-link nav-item-custom" href="/stress_testing">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-top">Stress</div>
+                        <div class="nav-text-bottom">Testing</div>
+                    </div>
                 </a>
-                <span class="navbar-text me-3">
-                    <i class="fas fa-calendar me-1"></i>
-                    <span id="current-date"></span>
+                <span class="navbar-text me-3 nav-item-custom">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="nav-text-wrapper">
+                        <div class="nav-text-top" id="current-date-top"></div>
+                        <div class="nav-text-bottom" id="current-date-bottom"></div>
+                    </div>
                 </span>
                 <button class="btn btn-outline-light btn-sm" onclick="exportData()">
                     <i class="fas fa-download me-1"></i>Export Data
@@ -646,7 +678,19 @@
         // Initialize statistics
         document.addEventListener('DOMContentLoaded', () => {
             // Set current date
-            document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+            const now = new Date();
+            const currentDateTop = document.getElementById('current-date-top');
+            const currentDateBottom = document.getElementById('current-date-bottom');
+            
+            if (currentDateTop && currentDateBottom) {
+                const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+                const month = now.toLocaleDateString('en-US', { month: 'long' });
+                const day = now.getDate();
+                const year = now.getFullYear();
+                
+                currentDateTop.textContent = `${weekday}, ${month}`;
+                currentDateBottom.textContent = `${day}, ${year}`;
+            }
             
             new Statistics();
         });

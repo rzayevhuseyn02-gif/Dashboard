@@ -1,6 +1,6 @@
-// Dashboard JavaScript functionality
+// Economic Overview JavaScript functionality
 
-class EconomicDashboard {
+class EconomicOverview {
     constructor() {
         this.data = null;
         this.charts = {};
@@ -35,7 +35,26 @@ class EconomicDashboard {
             day: 'numeric',
             weekday: 'long'
         };
-        document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+        
+        // For the old single date display (if it exists)
+        const currentDateElement = document.getElementById('current-date');
+        if (currentDateElement) {
+            currentDateElement.textContent = now.toLocaleDateString('en-US', options);
+        }
+        
+        // For the new split date display
+        const currentDateTop = document.getElementById('current-date-top');
+        const currentDateBottom = document.getElementById('current-date-bottom');
+        
+        if (currentDateTop && currentDateBottom) {
+            const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+            const month = now.toLocaleDateString('en-US', { month: 'long' });
+            const day = now.getDate();
+            const year = now.getFullYear();
+            
+            currentDateTop.textContent = `${weekday}, ${month}`;
+            currentDateBottom.textContent = `${day}, ${year}`;
+        }
     }
 
     async loadData() {
@@ -360,9 +379,9 @@ class EconomicDashboard {
     }
 }
 
-// Initialize dashboard when DOM is loaded
+// Initialize economic overview when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new EconomicDashboard();
+    new EconomicOverview();
 });
 
 // Add window resize handler for responsive charts

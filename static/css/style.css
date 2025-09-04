@@ -11,6 +11,61 @@ body {
     font-size: 1.5rem;
 }
 
+/* Custom Navigation Items */
+.nav-item-custom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px !important;
+    margin: 0 4px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.nav-item-custom:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.nav-item-custom.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-icon-wrapper {
+    margin-bottom: 4px;
+    font-size: 1.2rem;
+}
+
+.nav-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.nav-text-top,
+.nav-text-bottom {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.nav-text-top {
+    margin-bottom: 1px;
+}
+
+.nav-text-bottom {
+    margin-top: 1px;
+}
+
+/* Date display in navigation */
+#current-date-top,
+#current-date-bottom {
+    font-size: 0.7rem;
+}
+
 /* Summary Cards */
 .summary-card {
     border: none;
