@@ -2154,7 +2154,7 @@ def ews_system_analysis():
         var_data = df[COLS].copy()
         
         # EWS Parameters
-        K = 1.5  # threshold coefficient (mean ± K*std)
+        K = 0.4  # threshold coefficient (mean ± K*std)
         
         # Define stress scenarios (from notebook)
         scenarios = {
