@@ -630,10 +630,6 @@ def index():
     """Main dashboard page"""
     return render_template('index.html')
 
-@app.route('/analysis')
-def analysis_page():
-    """Advanced analysis page"""
-    return render_template('analysis.html')
 
 @app.route('/forecasting')
 def forecasting_page():
@@ -734,94 +730,7 @@ def detailed_statistics():
     
     return jsonify({'success': True, 'statistics': stats})
 
-@app.route('/api/analysis/seasonality')
-def seasonality_analysis():
-    """Analyze seasonality patterns"""
-    if len(data) < 12:
-        return jsonify({'success': False, 'error': 'Insufficient data for seasonality analysis'})
-    
-    # Group data by month
-    monthly_data = {}
-    for row in data:
-        date = datetime.strptime(row['observation_date'], '%Y-%m-%d')
-        month = date.month
-        if month not in monthly_data:
-            monthly_data[month] = {'gdp': [], 'pce': [], 'unemployment': []}
-        monthly_data[month]['gdp'].append(row['GDP'])
-        monthly_data[month]['pce'].append(row['Personal_Consumption_Expenditure'])
-        monthly_data[month]['unemployment'].append(row['Unemployment_Rate'])
-    
-    # Calculate monthly averages
-    seasonality = {}
-    for month in range(1, 13):
-        if month in monthly_data:
-            seasonality[month] = {
-                'gdp_avg': sum(monthly_data[month]['gdp']) / len(monthly_data[month]['gdp']),
-                'pce_avg': sum(monthly_data[month]['pce']) / len(monthly_data[month]['pce']),
-                'unemployment_avg': sum(monthly_data[month]['unemployment']) / len(monthly_data[month]['unemployment'])
-            }
-    
-    return jsonify({'success': True, 'seasonality': seasonality})
 
-@app.route('/api/analysis/volatility')
-def volatility_analysis():
-    """Analyze volatility and risk metrics"""
-    if len(data) < 2:
-        return jsonify({'success': False, 'error': 'Insufficient data'})
-    
-    # Calculate returns/changes
-    gdp_changes = []
-    pce_changes = []
-    unemp_changes = []
-    
-    for i in range(1, len(data)):
-        gdp_change = (data[i]['GDP'] - data[i-1]['GDP']) / data[i-1]['GDP']
-        pce_change = (data[i]['Personal_Consumption_Expenditure'] - data[i-1]['Personal_Consumption_Expenditure']) / data[i-1]['Personal_Consumption_Expenditure']
-        unemp_change = (data[i]['Unemployment_Rate'] - data[i-1]['Unemployment_Rate']) / data[i-1]['Unemployment_Rate']
-        
-        gdp_changes.append(gdp_change)
-        pce_changes.append(pce_change)
-        unemp_changes.append(unemp_change)
-    
-    def calculate_volatility_metrics(changes):
-        n = len(changes)
-        mean = sum(changes) / n
-        variance = sum((x - mean) ** 2 for x in changes) / n
-        std_dev = math.sqrt(variance)
-        
-        # Calculate Value at Risk (95% confidence) - 5th percentile
-        sorted_changes = sorted(changes)
-        var_95 = sorted_changes[int(0.05 * n)] if n > 20 else sorted_changes[0]
-        
-        # Calculate maximum drawdown
-        cumulative = [1]
-        for change in changes:
-            cumulative.append(cumulative[-1] * (1 + change))
-        
-        max_drawdown = 0
-        peak = cumulative[0]
-        for value in cumulative:
-            if value > peak:
-                peak = value
-            drawdown = (peak - value) / peak
-            if drawdown > max_drawdown:
-                max_drawdown = drawdown
-        
-        return {
-            'volatility': std_dev,
-            'variance': variance,
-            'var_95': var_95,
-            'max_drawdown': max_drawdown,
-            'mean_return': mean
-        }
-    
-    volatility = {
-        'gdp': calculate_volatility_metrics(gdp_changes),
-        'pce': calculate_volatility_metrics(pce_changes),
-        'unemployment': calculate_volatility_metrics(unemp_changes)
-    }
-    
-    return jsonify({'success': True, 'volatility': volatility})
 
 @app.route('/api/forecasting/simple')
 def simple_forecasting():
@@ -1514,49 +1423,6 @@ def arima_stress_testing_chart_data():
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': f'ARIMA stress testing error: {str(e)}'}), 500
 
-@app.route('/api/analysis/regression')
-def regression_analysis():
-    """Simple regression analysis between variables"""
-    if len(data) < 2:
-        return jsonify({'success': False, 'error': 'Insufficient data'})
-    
-    gdp_values = [row['GDP'] for row in data]
-    pce_values = [row['Personal_Consumption_Expenditure'] for row in data]
-    unemp_values = [row['Unemployment_Rate'] for row in data]
-    
-    def simple_linear_regression(x, y):
-        n = len(x)
-        if n != len(y) or n < 2:
-            return None
-        
-        sum_x = sum(x)
-        sum_y = sum(y)
-        sum_xy = sum(x[i] * y[i] for i in range(n))
-        sum_x2 = sum(x[i] * x[i] for i in range(n))
-        
-        slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-        intercept = (sum_y - slope * sum_x) / n
-        
-        # Calculate R-squared
-        y_mean = sum_y / n
-        ss_tot = sum((y[i] - y_mean) ** 2 for i in range(n))
-        ss_res = sum((y[i] - (intercept + slope * x[i])) ** 2 for i in range(n))
-        r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
-        
-        return {
-            'slope': slope,
-            'intercept': intercept,
-            'r_squared': r_squared,
-            'equation': f"y = {slope:.4f}x + {intercept:.4f}"
-        }
-    
-    regressions = {
-        'gdp_vs_pce': simple_linear_regression(gdp_values, pce_values),
-        'gdp_vs_unemployment': simple_linear_regression(gdp_values, unemp_values),
-        'pce_vs_unemployment': simple_linear_regression(pce_values, unemp_values)
-    }
-    
-    return jsonify({'success': True, 'regressions': regressions})
 
 # Chart endpoints (same as before)
 @app.route('/api/chart/combined')

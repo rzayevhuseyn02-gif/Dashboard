@@ -27,14 +27,6 @@
                         <div class="nav-text-bottom">Overview</div>
                     </div>
                 </a>
-                <a class="nav-link nav-item-custom" href="/analysis">
-                    <div class="nav-icon-wrapper">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div class="nav-text-wrapper">
-                        <div class="nav-text-bottom">Analysis</div>
-                    </div>
-                </a>
                 <a class="nav-link nav-item-custom" href="/forecasting">
                     <div class="nav-icon-wrapper">
                         <i class="fas fa-chart-line"></i>
@@ -157,72 +149,6 @@
             </div>
         </div>
 
-        <!-- Stress Test Results -->
-        <div class="row mb-4" id="stress-results" style="display: none;">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-chart-bar me-2"></i>
-                            Stress Test Results
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- Results Grid -->
-                        <div class="row mb-4" id="results-grid">
-                            <!-- Results will be populated here -->
-                        </div>
-                        
-                        <!-- Charts -->
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">GDP Impact</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="gdp-chart"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Unemployment Impact</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="unemployment-chart"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Consumption Impact</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="consumption-chart"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Risk Metrics</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="risk-chart"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Comprehensive Chart Section -->
         <div class="row mb-4" id="comprehensive-chart-section" style="display: none;">
@@ -309,7 +235,7 @@
                                     <ul class="mb-0">
                                         <li><strong>Indicators:</strong> GDP growth, PCE growth, Unemployment change</li>
                                         <li><strong>Standardization:</strong> StandardScaler normalization (mean=0, std=1)</li>
-                                        <li><strong>Thresholds:</strong> Mean + 1.5 × Standard Deviation (K=1.5)</li>
+                                        <li><strong>Thresholds:</strong> Mean + 0.4 × Standard Deviation (K=0.4)</li>
                                         <li><strong>Warning Signals:</strong> GDP/PCE below threshold, Unemployment above threshold</li>
                                         <li><strong>EWS Score:</strong> Sum of warning signals (0-3 scale)</li>
                                         <li><strong>Scenarios:</strong> Mild, Moderate, Severe, and Custom stress scenarios</li>
@@ -378,7 +304,7 @@
                                                 <strong>Unemployment Change:</strong> <span id="ews-unemp-threshold">-</span>
                                             </div>
                                             <div class="text-muted mt-2">
-                                                <small>K = 1.5 | StandardScaler + Z-score Method</small>
+                                                <small>K = 0.4 | StandardScaler + Z-score Method</small>
                                             </div>
                                         </div>
                                     </div>
@@ -486,293 +412,16 @@
         function displayResults(results) {
             currentResults = results;
             
-            // Show results section
-            document.getElementById('stress-results').style.display = 'block';
+            // Show comprehensive chart section only
             document.getElementById('comprehensive-chart-section').style.display = 'block';
-            
-            // Populate results grid
-            const resultsGrid = document.getElementById('results-grid');
-            resultsGrid.innerHTML = `
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">GDP Impact</h6>
-                            <h3 class="text-primary">${results.gdp_impact.toFixed(2)}%</h3>
-                            <small class="text-muted ${results.gdp_impact < 0 ? 'text-danger' : 'text-success'}">
-                                ${results.gdp_impact < 0 ? '↓' : '↑'} ${Math.abs(results.gdp_impact).toFixed(2)}%
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">Unemployment Impact</h6>
-                            <h3 class="text-warning">${results.unemployment_impact.toFixed(2)}%</h3>
-                            <small class="text-muted ${results.unemployment_impact > 0 ? 'text-danger' : 'text-success'}">
-                                ${results.unemployment_impact > 0 ? '↑' : '↓'} ${Math.abs(results.unemployment_impact).toFixed(2)}%
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">Consumption Impact</h6>
-                            <h3 class="text-info">${results.consumption_impact.toFixed(2)}%</h3>
-                            <small class="text-muted ${results.consumption_impact < 0 ? 'text-danger' : 'text-success'}">
-                                ${results.consumption_impact < 0 ? '↓' : '↑'} ${Math.abs(results.consumption_impact).toFixed(2)}%
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">Risk Score</h6>
-                            <h3 class="text-secondary">${results.risk_score.toFixed(1)}</h3>
-                            <small class="text-muted">${getRiskLevel(results.risk_score)}</small>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Create charts
-            createCharts(results);
             
             // Load comprehensive chart data
             loadComprehensiveChartData(results);
             
-
-            
             // Load EWS system analysis
             loadEWSSystemAnalysis(results);
-            
-
         }
         
-        // Create visualization charts
-        function createCharts(results) {
-            console.log("=== FRONTEND DEBUG ===");
-            console.log("Results:", results);
-            
-            // Check if baseline_forecast exists, if not use simple trajectory charts
-            if (!results.baseline_forecast) {
-                console.log("No baseline_forecast found, using simple trajectory charts");
-                
-                // GDP Trajectory Chart
-                const gdpData = [
-                    {
-                        x: results.time_periods,
-                        y: results.gdp_trajectory,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: 'GDP Impact',
-                        line: { color: '#d62728', width: 3 },
-                        marker: { size: 6 }
-                    }
-                ];
-                
-                const gdpLayout = {
-                    title: 'GDP Impact Over Time',
-                    xaxis: { title: 'Time Period (months)' },
-                    yaxis: { title: 'GDP Change (%)' },
-                    template: 'plotly_white',
-                    height: 300,
-                    legend: { x: 0.02, y: 0.98 }
-                };
-                
-                Plotly.newPlot('gdp-chart', gdpData, gdpLayout);
-                
-                // Unemployment Trajectory Chart
-                const unemploymentData = [
-                    {
-                        x: results.time_periods,
-                        y: results.unemployment_trajectory,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: 'Unemployment Impact',
-                        line: { color: '#ff7f0e', width: 3 },
-                        marker: { size: 6 }
-                    }
-                ];
-                
-                const unemploymentLayout = {
-                    title: 'Unemployment Impact Over Time',
-                    xaxis: { title: 'Time Period (months)' },
-                    yaxis: { title: 'Unemployment Change (%)' },
-                    template: 'plotly_white',
-                    height: 300,
-                    legend: { x: 0.02, y: 0.98 }
-                };
-                
-                Plotly.newPlot('unemployment-chart', unemploymentData, unemploymentLayout);
-                
-                // Consumption Trajectory Chart
-                const consumptionData = [
-                    {
-                        x: results.time_periods,
-                        y: results.consumption_trajectory,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: 'Consumption Impact',
-                        line: { color: '#2ca02c', width: 3 },
-                        marker: { size: 6 }
-                    }
-                ];
-                
-                const consumptionLayout = {
-                    title: 'Consumption Impact Over Time',
-                    xaxis: { title: 'Time Period (months)' },
-                    yaxis: { title: 'Consumption Change (%)' },
-                    template: 'plotly_white',
-                    height: 300,
-                    legend: { x: 0.02, y: 0.98 }
-                };
-                
-                Plotly.newPlot('consumption-chart', consumptionData, consumptionLayout);
-                
-                return;
-            }
-            
-            // If baseline_forecast exists, use comparison charts
-            console.log("Baseline GDP:", results.baseline_forecast.gdp);
-            console.log("GDP Trajectory:", results.gdp_trajectory);
-            console.log("=== END FRONTEND DEBUG ===");
-            
-            // GDP Comparison Chart (Baseline vs Stressed)
-            const gdpData = [
-                {
-                x: results.time_periods,
-                y: results.gdp_trajectory,
-                type: 'scatter',
-                mode: 'lines+markers',
-                    name: 'Stressed GDP',
-                    line: { color: '#d62728', width: 3 },
-                marker: { size: 6 }
-                },
-                {
-                    x: results.time_periods,
-                    y: results.baseline_forecast.gdp.map((val, index) => {
-                        // Convert baseline forecast to percentage change from first value
-                        const firstValue = results.baseline_forecast.gdp[0];
-                        const percentageChange = ((val - firstValue) / firstValue) * 100;
-                        console.log(`Baseline GDP ${index}: ${val} -> ${percentageChange}%`);
-                        return percentageChange;
-                    }),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'VAR Baseline GDP',
-                    line: { color: '#1f77b4', width: 2, dash: 'dash' },
-                    marker: { size: 4 }
-                }
-            ];
-            
-            const gdpLayout = {
-                title: 'GDP: VAR Baseline vs Stressed Scenario',
-                xaxis: { title: 'Time Period (months)' },
-                yaxis: { title: 'GDP Change (%)' },
-                template: 'plotly_white',
-                height: 300,
-                legend: { x: 0.02, y: 0.98 }
-            };
-            
-            Plotly.newPlot('gdp-chart', gdpData, gdpLayout);
-            
-            // Unemployment Comparison Chart
-            const unemploymentData = [
-                {
-                x: results.time_periods,
-                y: results.unemployment_trajectory,
-                type: 'scatter',
-                mode: 'lines+markers',
-                    name: 'Stressed Unemployment',
-                line: { color: '#d62728', width: 3 },
-                marker: { size: 6 }
-                },
-                {
-                    x: results.time_periods,
-                    y: results.baseline_forecast.unemployment.map((val, index) => {
-                        // Convert baseline forecast to percentage change from first value
-                        const firstValue = results.baseline_forecast.unemployment[0];
-                        return ((val - firstValue) / firstValue) * 100;
-                    }),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'VAR Baseline Unemployment',
-                    line: { color: '#ff7f0e', width: 2, dash: 'dash' },
-                    marker: { size: 4 }
-                }
-            ];
-            
-            const unemploymentLayout = {
-                title: 'Unemployment: VAR Baseline vs Stressed Scenario',
-                xaxis: { title: 'Time Period (months)' },
-                yaxis: { title: 'Unemployment Change (%)' },
-                template: 'plotly_white',
-                height: 300,
-                legend: { x: 0.02, y: 0.98 }
-            };
-            
-            Plotly.newPlot('unemployment-chart', unemploymentData, unemploymentLayout);
-            
-            // Consumption Comparison Chart
-            const consumptionData = [
-                {
-                x: results.time_periods,
-                y: results.consumption_trajectory,
-                type: 'scatter',
-                mode: 'lines+markers',
-                    name: 'Stressed Consumption',
-                    line: { color: '#d62728', width: 3 },
-                marker: { size: 6 }
-                },
-                {
-                    x: results.time_periods,
-                    y: results.baseline_forecast.consumption.map((val, index) => {
-                        // Convert baseline forecast to percentage change from first value
-                        const firstValue = results.baseline_forecast.consumption[0];
-                        return ((val - firstValue) / firstValue) * 100;
-                    }),
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: 'VAR Baseline Consumption',
-                    line: { color: '#2ca02c', width: 2, dash: 'dash' },
-                    marker: { size: 4 }
-                }
-            ];
-            
-            const consumptionLayout = {
-                title: 'Consumption: VAR Baseline vs Stressed Scenario',
-                xaxis: { title: 'Time Period (months)' },
-                yaxis: { title: 'Consumption Change (%)' },
-                template: 'plotly_white',
-                height: 300,
-                legend: { x: 0.02, y: 0.98 }
-            };
-            
-            Plotly.newPlot('consumption-chart', consumptionData, consumptionLayout);
-            
-            // Risk Metrics Chart
-            const riskData = [{
-                x: ['GDP Risk', 'Unemployment Risk', 'Consumption Risk', 'Overall Risk'],
-                y: [results.gdp_risk, results.unemployment_risk, results.consumption_risk, results.risk_score],
-                type: 'bar',
-                marker: {
-                    color: ['#ff7f0e', '#d62728', '#2ca02c', '#667eea']
-                }
-            }];
-            
-            const riskLayout = {
-                title: 'Risk Assessment by Category',
-                xaxis: { title: 'Risk Categories' },
-                yaxis: { title: 'Risk Score' },
-                template: 'plotly_white',
-                height: 300
-            };
-            
-            Plotly.newPlot('risk-chart', riskData, riskLayout);
-        }
         
         // Load comprehensive chart data
         function loadComprehensiveChartData(results) {
@@ -926,13 +575,6 @@
             document.getElementById('forecast-model-label').textContent = `${forecastModelName} Forecast:`;
         }
         
-        // Get risk level description
-        function getRiskLevel(score) {
-            if (score < 3) return 'Low Risk';
-            if (score < 6) return 'Medium Risk';
-            if (score < 8) return 'High Risk';
-            return 'Critical Risk';
-        }
         
 
         
@@ -1136,7 +778,6 @@
         // Show/hide loading state
         function showLoading() {
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('stress-results').style.display = 'none';
         }
         
         function hideLoading() {
